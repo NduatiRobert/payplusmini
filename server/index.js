@@ -300,7 +300,7 @@ admin.get('/tasks', (req, res) => {
 
 admin.post('/tasks', (req, res) => {
   const { type, title, url, chat_id, reward, sort } = req.body;
-  if (!['channel', 'bot', 'subscribe'].includes(type) || !title || !/^https?:\/\//.test(url || '')) throw new HttpError(400, 'type, title and a valid url are required.');
+  if (!config.taskTypes.includes(type) || !title || !/^https?:\/\//.test(url || '')) throw new HttpError(400, 'type, title and a valid url are required.');
   db.prepare('INSERT INTO tasks (type,title,url,chat_id,reward,sort,created_at) VALUES (?,?,?,?,?,?,?)')
     .run(type, title, url, chat_id || null, toMicro(reward || 0.1), Number(sort) || 0, now());
   res.json({ ok: true });
@@ -310,8 +310,9 @@ admin.patch('/tasks/:id', (req, res) => {
   const t = db.prepare('SELECT * FROM tasks WHERE id=?').get(Number(req.params.id));
   if (!t) throw new HttpError(404, 'Task not found.');
   const b = req.body;
-  db.prepare('UPDATE tasks SET title=?, url=?, chat_id=?, reward=?, active=?, sort=? WHERE id=?').run(
-    b.title ?? t.title, b.url ?? t.url, b.chat_id !== undefined ? (b.chat_id || null) : t.chat_id,
+  if (b.type !== undefined && !config.taskTypes.includes(b.type)) throw new HttpError(400, `type must be one of: ${config.taskTypes.join(', ')}`);
+  db.prepare('UPDATE tasks SET type=?, title=?, url=?, chat_id=?, reward=?, active=?, sort=? WHERE id=?').run(
+    b.type ?? t.type, b.title ?? t.title, b.url ?? t.url, b.chat_id !== undefined ? (b.chat_id || null) : t.chat_id,
     b.reward !== undefined ? toMicro(b.reward) : t.reward, b.active !== undefined ? (b.active ? 1 : 0) : t.active,
     b.sort ?? t.sort, t.id);
   res.json({ ok: true });

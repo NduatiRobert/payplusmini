@@ -322,6 +322,15 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
   background: linear-gradient(180deg, #4a4d60, #23252f); }
 .load-err { font: 11px ui-monospace, monospace; color: #a12828; word-break: break-word; }
 
+/* task list inside each category */
+.task-items { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.task-item { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 12px; border-radius: 12px; background: rgba(255,255,255,.75); border: 1px solid #e3e3ea; }
+.task-item.done { opacity: .7; }
+.task-item-text { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.task-item-text span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-item-text small { font-size: 11.5px; font-weight: 700; color: #a8842e; }
+.gold-btn.sm { min-width: 84px; padding: 8px 12px; font-size: 13px; border-radius: 9px; }
+
 .demo-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:90;background:#23252f;color:#ffe48a;font:600 11px Inter,sans-serif;padding:4px 10px;border-radius:0 0 10px 10px;white-space:nowrap}.demo-banner button{color:#fff;text-decoration:underline;font-size:11px;padding:0 0 0 4px}.topbar{padding-top:26px}</style>
 </head>
 <body>
@@ -545,6 +554,10 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
       <symbol id="i-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13"/></symbol>
       <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M12 8V4M8 4h8"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></symbol>
       <symbol id="i-youtube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="currentColor"><path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.78L17.75 3zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43z"/></symbol>
+      <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></symbol>
+      <symbol id="i-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 2h-3.3v13.2a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1V9a6.3 6.3 0 1 0 5.3 6.2V8.6a7.9 7.9 0 0 0 4.4 1.4V6.7a4.6 4.6 0 0 1-4.4-4.7z"/></symbol>
+      <symbol id="i-facebook" viewBox="0 0 24 24" fill="currentColor"><path d="M14 8.5V6.7c0-.8.2-1.3 1.4-1.3H17V2.2c-.3 0-1.3-.2-2.5-.2-2.5 0-4.1 1.5-4.1 4.2v2.3H7.6v3.6h2.8V22H14v-9.9h2.8l.4-3.6H14z"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
       <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2M9.5 11l2 2 3-4"/></symbol>
       <symbol id="i-tether" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3.4h-5.2v2.2c3.6.2 6.2.9 6.2 1.8s-2.6 1.6-6.2 1.8V20h-3.6v-6.8C6.6 13 4 12.3 4 11.4s2.6-1.6 6.2-1.8V7.4H5V4zm5.2 7v1.2c.6 0 1.2.1 1.8.1s1.2 0 1.8-.1V11c-.6 0-1.2-.1-1.8-.1s-1.2 0-1.8.1zm-1.4-.1c-1.5.2-2.6.4-2.6.6 0 .3 1.1.5 2.6.6v-1.2zm6.4 0v1.2c1.5-.2 2.6-.4 2.6-.6s-1.1-.5-2.6-.6z"/></symbol>
@@ -559,9 +572,11 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
     balance: 2.30, totalEarned: 2.90, adsWatched: 2, adsEarned: 0.60, adsToday: 0, lastAd: 0,
     invited: 3, inviteEarned: 2.25, sessions: {}, withdrawals: [],
     tasks: [
-      ...['PayPlus News', 'PayPlus Community', 'Crypto Daily', 'Earn Tips KE'].map((n, i) => ({ id: i + 1, type: 'channel', title: `Join ${n}`, url: 'https://t.me/telegram', reward: 0.10, status: i < 3 ? 'done' : 'new' })),
-      ...Array.from({ length: 10 }, (_, i) => ({ id: 10 + i, type: 'bot', title: `Start Partner Bot #${i + 1}`, url: 'https://t.me/BotFather', reward: 0.10, status: i < 4 ? 'done' : 'new' })),
-      { id: 30, type: 'subscribe', title: 'Subscribe on YouTube', url: 'https://youtube.com', reward: 0.10, status: 'new' },
+      ...['PayPlus News', 'PayPlus Community', 'Crypto Daily', 'Earn Tips KE'].map((n, i) => ({ id: i + 1, type: 'channel', title: `Join ${n}`, url: 'https://t.me/telegram', reward: 0.10, status: i < 2 ? 'done' : 'new' })),
+      ...['@PayPlusKE', '@CryptoNewsKE', '@EarnDaily', '@TechAfrica', '@SideHustleKE'].map((n, i) => ({ id: 10 + i, type: 'x', title: `Follow ${n}`, url: 'https://x.com', reward: 0.11, status: i < 1 ? 'done' : 'new' })),
+      ...['PayPlus Tutorials', 'Crypto Explained', 'Earn Online KE', 'Tech Reviews', 'Money Tips'].map((n, i) => ({ id: 20 + i, type: 'youtube', title: `Subscribe: ${n}`, url: 'https://youtube.com', reward: 0.10, status: 'new' })),
+      ...Array.from({ length: 3 }, (_, i) => ({ id: 30 + i, type: 'bot', title: `Start Partner Bot #${i + 1}`, url: 'https://t.me/BotFather', reward: 0.10, status: i < 1 ? 'done' : 'new' })),
+      ...['@payplus.ke', '@earn.daily'].map((n, i) => ({ id: 40 + i, type: 'instagram', title: `Follow ${n}`, url: 'https://instagram.com', reward: 0.10, status: 'new' })),
     ],
   };
   const CFG = { reward: 0.30, limit: 15, cooldown: 5, minWd: 10 };
@@ -664,7 +679,7 @@ window.I18N = {
     totalWatched: 'Total Watched', ads: 'ads', totalEarned: 'Total Earned',
     tasksTitle: 'Complete Tasks & Earn Rewards', loading: 'Loading…', noTasks: 'No tasks available right now. Check back soon!',
     progress: 'Progress', start: 'Start', subscribe: 'Subscribe', check: 'Check', done: 'Done',
-    joinChannels: 'Join Channels', startBots: 'Start Bots', subscribeChannel: 'Subscribe Channel',
+    joinChannels: 'Join Channels', startBots: 'Start Bots', subscribeChannel: 'Subscribe Channel', followX: 'Follow on X', subscribeYoutube: 'Subscribe on YouTube', followInstagram: 'Follow on Instagram', followTiktok: 'Follow on TikTok', followFacebook: 'Follow on Facebook', join: 'Join', follow: 'Follow', perFollow: 'per follow', perSubscribe: 'per subscription', upTo: 'up to',
     perChannel: 'per channel', perBot: 'per bot', forSubscribing: 'for subscribing', earn: 'Earn',
     taskStartedHint: 'Complete the task, then come back and tap Check.',
     inviteEarn: 'Invite & Earn', forEachInvite: 'for each invite',
@@ -698,7 +713,7 @@ window.I18N = {
     totalWatched: 'Jumla Uliyotazama', ads: 'matangazo', totalEarned: 'Jumla Uliyopata',
     tasksTitle: 'Kamilisha Kazi & Upate Zawadi', loading: 'Inapakia…', noTasks: 'Hakuna kazi kwa sasa. Rudi baadaye!',
     progress: 'Maendeleo', start: 'Anza', subscribe: 'Jisajili', check: 'Hakiki', done: 'Imekamilika',
-    joinChannels: 'Jiunge na Chaneli', startBots: 'Anzisha Boti', subscribeChannel: 'Jisajili Chaneli',
+    joinChannels: 'Jiunge na Chaneli', startBots: 'Anzisha Boti', subscribeChannel: 'Jisajili Chaneli', followX: 'Fuata kwenye X', subscribeYoutube: 'Jisajili YouTube', followInstagram: 'Fuata kwenye Instagram', followTiktok: 'Fuata kwenye TikTok', followFacebook: 'Fuata kwenye Facebook', join: 'Jiunge', follow: 'Fuata', perFollow: 'kwa kila ufuataji', perSubscribe: 'kwa kila usajili', upTo: 'hadi',
     perChannel: 'kwa kila chaneli', perBot: 'kwa kila boti', forSubscribing: 'kwa kujisajili', earn: 'Pata',
     taskStartedHint: 'Kamilisha kazi, kisha urudi ubonyeze Hakiki.',
     inviteEarn: 'Alika & Upate', forEachInvite: 'kwa kila mwaliko',
@@ -732,7 +747,7 @@ window.I18N = {
     totalWatched: 'Total vues', ads: 'pubs', totalEarned: 'Total gagné',
     tasksTitle: 'Tâches & récompenses', loading: 'Chargement…', noTasks: 'Aucune tâche pour le moment.',
     progress: 'Progression', start: 'Démarrer', subscribe: "S'abonner", check: 'Vérifier', done: 'Fait',
-    joinChannels: 'Rejoindre des chaînes', startBots: 'Démarrer des bots', subscribeChannel: "S'abonner à la chaîne",
+    joinChannels: 'Rejoindre des chaînes', startBots: 'Démarrer des bots', subscribeChannel: "S'abonner à la chaîne", followX: 'Suivre sur X', subscribeYoutube: "S'abonner sur YouTube", followInstagram: 'Suivre sur Instagram', followTiktok: 'Suivre sur TikTok', followFacebook: 'Suivre sur Facebook', join: 'Rejoindre', follow: 'Suivre', perFollow: 'par abonnement', perSubscribe: 'par abonnement', upTo: "jusqu'à",
     perChannel: 'par chaîne', perBot: 'par bot', forSubscribing: "pour l'abonnement", earn: 'Gagnez',
     taskStartedHint: 'Terminez la tâche puis appuyez sur Vérifier.',
     inviteEarn: 'Invitez & gagnez', forEachInvite: 'par invitation',
@@ -1002,40 +1017,56 @@ window.I18N = {
   };
 
   // ------------------------------------------------------------ tasks
+  // Task categories, in display order. `btn` = label on each task's button before it is started.
   const GROUPS = {
-    channel:   { title: 'joinChannels',     per: 'perChannel',     btn: 'start',     icon: 'i-megaphone' },
-    bot:       { title: 'startBots',        per: 'perBot',         btn: 'start',     icon: 'i-bot' },
-    subscribe: { title: 'subscribeChannel', per: 'forSubscribing', btn: 'subscribe', icon: 'i-youtube' },
+    channel:   { title: 'joinChannels',     per: 'perChannel',   btn: 'join',      icon: 'i-megaphone' },
+    bot:       { title: 'startBots',        per: 'perBot',       btn: 'start',     icon: 'i-bot' },
+    x:         { title: 'followX',          per: 'perFollow',    btn: 'follow',    icon: 'i-x' },
+    youtube:   { title: 'subscribeYoutube', per: 'perSubscribe', btn: 'subscribe', icon: 'i-youtube' },
+    instagram: { title: 'followInstagram',  per: 'perFollow',    btn: 'follow',    icon: 'i-instagram' },
+    tiktok:    { title: 'followTiktok',     per: 'perFollow',    btn: 'follow',    icon: 'i-tiktok' },
+    facebook:  { title: 'followFacebook',   per: 'perFollow',    btn: 'follow',    icon: 'i-facebook' },
   };
+  GROUPS.subscribe = GROUPS.youtube; // older servers
 
   async function loadTasks() {
     try { tasks = (await api('/tasks')).tasks; renderTasks(); }
     catch (e) { $('#taskList').innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`; }
   }
 
+  function taskButton(task, g) {
+    if (task.status === 'done') return `<button class="gold-btn sm done" disabled><svg class="ic"><use href="#i-check"/></svg>${t('done')}</button>`;
+    if (task.status === 'started') return `<button class="gold-btn sm check" data-claim="${task.id}">${t('check')}</button>`;
+    return `<button class="gold-btn sm" data-start="${task.id}">${t(g.btn)}</button>`;
+  }
+
   function renderTasks() {
     const list = $('#taskList');
     if (!tasks.length) { list.innerHTML = `<div class="empty">${t('noTasks')}</div>`; return; }
+    const seen = new Set();
     list.innerHTML = Object.entries(GROUPS).map(([type, g]) => {
-      const items = tasks.filter((x) => x.type === type);
+      if (seen.has(g)) return '';
+      seen.add(g);
+      const items = tasks.filter((x) => GROUPS[x.type] === g);
       if (!items.length) return '';
       const done = items.filter((x) => x.status === 'done').length;
-      const next = items.find((x) => x.status === 'started') || items.find((x) => x.status === 'new');
-      const reward = (next || items[0]).reward;
-      let btn;
-      if (!next) btn = `<button class="gold-btn done" disabled><svg class="ic"><use href="#i-check"/></svg>${t('done')}</button>`;
-      else if (next.status === 'started') btn = `<button class="gold-btn check" data-claim="${next.id}">${t('check')}</button>`;
-      else btn = `<button class="gold-btn" data-start="${next.id}">${t(g.btn)}</button>`;
+      const rewards = [...new Set(items.map((x) => x.reward))];
+      const rewardText = rewards.length === 1 ? money(rewards[0]) : `${t('upTo')} ${money(Math.max(...rewards))}`;
       return `
         <div class="task">
           <div class="task-row">
             <div class="icon-box"><svg class="ic"><use href="#${g.icon}"/></svg></div>
             <div class="task-info">
               <div class="task-title">${t(g.title)}</div>
-              <div class="task-earn">${t('earn')} <b>${money(reward)}</b> ${t(g.per)}</div>
-              ${next ? `<div class="task-next">${escapeHtml(next.title)}</div>` : ''}
+              <div class="task-earn">${t('earn')} <b>${rewardText}</b> ${t(g.per)}</div>
             </div>
-            ${btn}
+          </div>
+          <div class="task-items">
+            ${items.map((x) => `
+              <div class="task-item ${x.status}">
+                <div class="task-item-text"><span>${escapeHtml(x.title)}</span>${rewards.length > 1 ? `<small>+${money(x.reward)}</small>` : ''}</div>
+                ${taskButton(x, g)}
+              </div>`).join('')}
           </div>
           <div class="task-progress"><span>${t('progress')}</span><b>${done} / ${items.length}</b></div>
           <div class="bar"><div class="fill" style="width:${(done / items.length) * 100}%"></div></div>

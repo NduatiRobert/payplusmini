@@ -45,4 +45,7 @@ if (!config.devMode && !config.botToken) {
 }
 if (config.devMode) console.warn('⚠️  DEV_MODE is ON — Telegram auth is bypassed. Never use in production.');
 
+// Task categories shown in the app (in this order). Add new ones here and in public/app.js GROUPS.
+config.taskTypes = ['channel', 'bot', 'x', 'youtube', 'instagram', 'tiktok', 'facebook'];
+
 module.exports = config;

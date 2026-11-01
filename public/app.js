@@ -246,40 +246,56 @@
   };
 
   // ------------------------------------------------------------ tasks
+  // Task categories, in display order. `btn` = label on each task's button before it is started.
   const GROUPS = {
-    channel:   { title: 'joinChannels',     per: 'perChannel',     btn: 'start',     icon: 'i-megaphone' },
-    bot:       { title: 'startBots',        per: 'perBot',         btn: 'start',     icon: 'i-bot' },
-    subscribe: { title: 'subscribeChannel', per: 'forSubscribing', btn: 'subscribe', icon: 'i-youtube' },
+    channel:   { title: 'joinChannels',     per: 'perChannel',   btn: 'join',      icon: 'i-megaphone' },
+    bot:       { title: 'startBots',        per: 'perBot',       btn: 'start',     icon: 'i-bot' },
+    x:         { title: 'followX',          per: 'perFollow',    btn: 'follow',    icon: 'i-x' },
+    youtube:   { title: 'subscribeYoutube', per: 'perSubscribe', btn: 'subscribe', icon: 'i-youtube' },
+    instagram: { title: 'followInstagram',  per: 'perFollow',    btn: 'follow',    icon: 'i-instagram' },
+    tiktok:    { title: 'followTiktok',     per: 'perFollow',    btn: 'follow',    icon: 'i-tiktok' },
+    facebook:  { title: 'followFacebook',   per: 'perFollow',    btn: 'follow',    icon: 'i-facebook' },
   };
+  GROUPS.subscribe = GROUPS.youtube; // older servers
 
   async function loadTasks() {
     try { tasks = (await api('/tasks')).tasks; renderTasks(); }
     catch (e) { $('#taskList').innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`; }
   }
 
+  function taskButton(task, g) {
+    if (task.status === 'done') return `<button class="gold-btn sm done" disabled><svg class="ic"><use href="#i-check"/></svg>${t('done')}</button>`;
+    if (task.status === 'started') return `<button class="gold-btn sm check" data-claim="${task.id}">${t('check')}</button>`;
+    return `<button class="gold-btn sm" data-start="${task.id}">${t(g.btn)}</button>`;
+  }
+
   function renderTasks() {
     const list = $('#taskList');
     if (!tasks.length) { list.innerHTML = `<div class="empty">${t('noTasks')}</div>`; return; }
+    const seen = new Set();
     list.innerHTML = Object.entries(GROUPS).map(([type, g]) => {
-      const items = tasks.filter((x) => x.type === type);
+      if (seen.has(g)) return '';
+      seen.add(g);
+      const items = tasks.filter((x) => GROUPS[x.type] === g);
       if (!items.length) return '';
       const done = items.filter((x) => x.status === 'done').length;
-      const next = items.find((x) => x.status === 'started') || items.find((x) => x.status === 'new');
-      const reward = (next || items[0]).reward;
-      let btn;
-      if (!next) btn = `<button class="gold-btn done" disabled><svg class="ic"><use href="#i-check"/></svg>${t('done')}</button>`;
-      else if (next.status === 'started') btn = `<button class="gold-btn check" data-claim="${next.id}">${t('check')}</button>`;
-      else btn = `<button class="gold-btn" data-start="${next.id}">${t(g.btn)}</button>`;
+      const rewards = [...new Set(items.map((x) => x.reward))];
+      const rewardText = rewards.length === 1 ? money(rewards[0]) : `${t('upTo')} ${money(Math.max(...rewards))}`;
       return `
         <div class="task">
           <div class="task-row">
             <div class="icon-box"><svg class="ic"><use href="#${g.icon}"/></svg></div>
             <div class="task-info">
               <div class="task-title">${t(g.title)}</div>
-              <div class="task-earn">${t('earn')} <b>${money(reward)}</b> ${t(g.per)}</div>
-              ${next ? `<div class="task-next">${escapeHtml(next.title)}</div>` : ''}
+              <div class="task-earn">${t('earn')} <b>${rewardText}</b> ${t(g.per)}</div>
             </div>
-            ${btn}
+          </div>
+          <div class="task-items">
+            ${items.map((x) => `
+              <div class="task-item ${x.status}">
+                <div class="task-item-text"><span>${escapeHtml(x.title)}</span>${rewards.length > 1 ? `<small>+${money(x.reward)}</small>` : ''}</div>
+                ${taskButton(x, g)}
+              </div>`).join('')}
           </div>
           <div class="task-progress"><span>${t('progress')}</span><b>${done} / ${items.length}</b></div>
           <div class="bar"><div class="fill" style="width:${(done / items.length) * 100}%"></div></div>

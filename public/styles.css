@@ -313,3 +313,12 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 .load-fail button { margin-top: 10px; padding: 12px 28px; border-radius: 12px; color: #fff; font-weight: 700;
   background: linear-gradient(180deg, #4a4d60, #23252f); }
 .load-err { font: 11px ui-monospace, monospace; color: #a12828; word-break: break-word; }
+
+/* task list inside each category */
+.task-items { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.task-item { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 12px; border-radius: 12px; background: rgba(255,255,255,.75); border: 1px solid #e3e3ea; }
+.task-item.done { opacity: .7; }
+.task-item-text { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.task-item-text span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-item-text small { font-size: 11.5px; font-weight: 700; color: #a8842e; }
+.gold-btn.sm { min-width: 84px; padding: 8px 12px; font-size: 13px; border-radius: 9px; }

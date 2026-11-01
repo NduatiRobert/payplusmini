@@ -73,7 +73,7 @@ Set `DEV_MODE=false` in production. Static-only hosts like Netlify or GitHub Pag
 
 ## 5. Daily operation (admin panel `/admin`)
 - **Withdrawals**: send the money yourself (M-Pesa/airtime, PayPal, USDT), then click **Mark paid**. **Reject** refunds the user.
-- **Tasks**: add channel, bot and YouTube links and set rewards. For a channel task, set `chat_id` (e.g. `@mychannel`) **and make your bot an admin of that channel**. Joins are then checked automatically.
+- **Tasks**: add tasks in any category: Telegram channel, Telegram bot, X, YouTube, Instagram, TikTok, Facebook. Each category card in the app lists all of its tasks (add 5 X accounts and all 5 appear), and empty categories are hidden. For a channel task, set `chat_id` (e.g. `@mychannel`) **and make your bot an admin of that channel**. Joins are then checked automatically.
 - **Users**: search, adjust balances, ban cheaters.
 
 ## Rewards & anti-cheat (all in `.env`)

@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_ad_user_day ON ad_sessions(user_id, day);
 
 CREATE TABLE IF NOT EXISTS tasks (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  type        TEXT NOT NULL CHECK (type IN ('channel','bot','subscribe')),
+  type        TEXT NOT NULL,        -- see TASK_TYPES in config.js
   title       TEXT NOT NULL,
   url         TEXT NOT NULL,
   chat_id     TEXT,                 -- e.g. @mychannel or -100123..., enables real membership check
@@ -86,17 +86,35 @@ CREATE TABLE IF NOT EXISTS withdrawals (
 CREATE INDEX IF NOT EXISTS idx_wd_status ON withdrawals(status);
 `);
 
-// Seed example tasks on first run so the Tasks screen isn't empty. Edit/delete them in /admin.
-if (db.prepare('SELECT COUNT(*) c FROM tasks').get().c === 0) {
-  const ins = db.prepare('INSERT INTO tasks (type,title,url,chat_id,reward,sort,created_at) VALUES (?,?,?,?,?,?,?)');
-  const now = Date.now();
-  const r = 100_000; // $0.10
-  ins.run('channel', 'Join PayPlus News', 'https://t.me/telegram', '@telegram', r, 1, now);
-  ins.run('channel', 'Join PayPlus Community', 'https://t.me/durov', '@durov', r, 2, now);
-  ins.run('bot', 'Start Partner Bot', 'https://t.me/BotFather', null, r, 1, now);
-  ins.run('subscribe', 'Subscribe on YouTube', 'https://youtube.com/@telegram', null, r, 1, now);
+// Migration: older databases restricted task types to channel/bot/subscribe.
+// Rebuild the table without that restriction, keep every task's id (so user progress stays linked),
+// rename 'subscribe' to 'youtube', and move non-Telegram links that were added as "channel" to their platform.
+const tasksSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='tasks'").get()?.sql || '';
+if (tasksSql.includes('CHECK (type IN')) {
+  db.pragma('foreign_keys = OFF');
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE tasks_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL,
+        chat_id TEXT, reward INTEGER NOT NULL, active INTEGER NOT NULL DEFAULT 1, sort INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL);
+      INSERT INTO tasks_new SELECT id, CASE WHEN type='subscribe' THEN 'youtube' ELSE type END,
+        title, url, chat_id, reward, active, sort, created_at FROM tasks;
+      DROP TABLE tasks;
+      ALTER TABLE tasks_new RENAME TO tasks;
+    `);
+    const platform = [
+      ['x', /(^|\/\/|\.)(x|twitter)\.com\//i], ['youtube', /(youtube\.com|youtu\.be)\//i],
+      ['instagram', /instagram\.com\//i], ['tiktok', /tiktok\.com\//i], ['facebook', /(facebook\.com|fb\.com)\//i],
+    ];
+    for (const t of db.prepare("SELECT id, url FROM tasks WHERE type='channel'").all()) {
+      const hit = platform.find(([, re]) => re.test(t.url));
+      if (hit) db.prepare('UPDATE tasks SET type=? WHERE id=?').run(hit[0], t.id);
+    }
+  })();
+  db.pragma('foreign_keys = ON');
+  console.log('[db] tasks table migrated to support more task types');
 }
-
 const toMicro = (usd) => Math.round(Number(usd) * 1_000_000);
 const toUsd = (micro) => Math.round(Number(micro || 0) / 10_000) / 100; // 2 decimals
 

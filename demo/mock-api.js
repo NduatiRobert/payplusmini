@@ -5,9 +5,11 @@
     balance: 2.30, totalEarned: 2.90, adsWatched: 2, adsEarned: 0.60, adsToday: 0, lastAd: 0,
     invited: 3, inviteEarned: 2.25, sessions: {}, withdrawals: [],
     tasks: [
-      ...['PayPlus News', 'PayPlus Community', 'Crypto Daily', 'Earn Tips KE'].map((n, i) => ({ id: i + 1, type: 'channel', title: `Join ${n}`, url: 'https://t.me/telegram', reward: 0.10, status: i < 3 ? 'done' : 'new' })),
-      ...Array.from({ length: 10 }, (_, i) => ({ id: 10 + i, type: 'bot', title: `Start Partner Bot #${i + 1}`, url: 'https://t.me/BotFather', reward: 0.10, status: i < 4 ? 'done' : 'new' })),
-      { id: 30, type: 'subscribe', title: 'Subscribe on YouTube', url: 'https://youtube.com', reward: 0.10, status: 'new' },
+      ...['PayPlus News', 'PayPlus Community', 'Crypto Daily', 'Earn Tips KE'].map((n, i) => ({ id: i + 1, type: 'channel', title: `Join ${n}`, url: 'https://t.me/telegram', reward: 0.10, status: i < 2 ? 'done' : 'new' })),
+      ...['@PayPlusKE', '@CryptoNewsKE', '@EarnDaily', '@TechAfrica', '@SideHustleKE'].map((n, i) => ({ id: 10 + i, type: 'x', title: `Follow ${n}`, url: 'https://x.com', reward: 0.11, status: i < 1 ? 'done' : 'new' })),
+      ...['PayPlus Tutorials', 'Crypto Explained', 'Earn Online KE', 'Tech Reviews', 'Money Tips'].map((n, i) => ({ id: 20 + i, type: 'youtube', title: `Subscribe: ${n}`, url: 'https://youtube.com', reward: 0.10, status: 'new' })),
+      ...Array.from({ length: 3 }, (_, i) => ({ id: 30 + i, type: 'bot', title: `Start Partner Bot #${i + 1}`, url: 'https://t.me/BotFather', reward: 0.10, status: i < 1 ? 'done' : 'new' })),
+      ...['@payplus.ke', '@earn.daily'].map((n, i) => ({ id: 40 + i, type: 'instagram', title: `Follow ${n}`, url: 'https://instagram.com', reward: 0.10, status: 'new' })),
     ],
   };
   const CFG = { reward: 0.30, limit: 15, cooldown: 5, minWd: 10 };

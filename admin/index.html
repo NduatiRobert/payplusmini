@@ -62,14 +62,22 @@
 
   <section class="section" id="s-tasks">
     <form class="inline" id="taskForm">
-      <select name="type"><option value="channel">Join Channel</option><option value="bot">Start Bot</option><option value="subscribe">Subscribe (YouTube etc.)</option></select>
+      <select name="type">
+        <option value="channel">Join Telegram Channel/Group</option>
+        <option value="bot">Start Telegram Bot</option>
+        <option value="x">Follow on X (Twitter)</option>
+        <option value="youtube">Subscribe on YouTube</option>
+        <option value="instagram">Follow on Instagram</option>
+        <option value="tiktok">Follow on TikTok</option>
+        <option value="facebook">Follow on Facebook</option>
+      </select>
       <input name="title" placeholder="Title" required />
       <input name="url" placeholder="https://t.me/yourchannel" required style="min-width:220px" />
-      <input name="chat_id" placeholder="@channel (for auto-check)" />
+      <input name="chat_id" placeholder="@channel (Telegram channels only)" />
       <input name="reward" type="number" step="0.01" value="0.10" style="width:90px" />
       <button class="ok">Add task</button>
     </form>
-    <p class="muted">For channel tasks, set <b>chat_id</b> (e.g. <code>@yourchannel</code>) and add your bot as an <b>admin</b> of that channel, so joins are verified automatically. Other tasks can be claimed a few seconds after the user taps Start.</p>
+    <p class="muted">For channel tasks, set <b>chat_id</b> (e.g. <code>@yourchannel</code>) and add your bot as an <b>admin</b> of that channel, so joins are verified automatically. Other tasks (bots, X, YouTube, Instagram, TikTok, Facebook) can't be checked automatically, so they can be claimed a few seconds after the user taps Start. Each category shows all its tasks in the app; add as many as you like.</p>
     <table><thead><tr><th>#</th><th>Type</th><th>Title / URL</th><th>chat_id</th><th>Reward</th><th>Done by</th><th>Active</th><th></th></tr></thead><tbody id="taskBody"></tbody></table>
   </section>
 
@@ -158,11 +166,12 @@ $('#taskBody').onclick = async (e) => {
   if (del && confirm('Delete this task?')) { await api('/tasks/' + del.dataset.del, 'DELETE'); loadTasks(); }
   if (ed) {
     const t = JSON.parse($('#taskBody').dataset.rows).find((x) => x.id == ed.dataset.edit);
+    const type = prompt('Category: channel, bot, x, youtube, instagram, tiktok, facebook', t.type); if (type === null) return;
     const title = prompt('Title', t.title); if (title === null) return;
     const url = prompt('URL', t.url); if (url === null) return;
     const chat_id = prompt('chat_id (leave empty for none)', t.chat_id || ''); if (chat_id === null) return;
     const reward = prompt('Reward (USD)', t.reward); if (reward === null) return;
-    await api('/tasks/' + t.id, 'PATCH', { title, url, chat_id, reward: Number(reward) }); loadTasks();
+    await api('/tasks/' + t.id, 'PATCH', { type: type.trim().toLowerCase(), title, url, chat_id, reward: Number(reward) }); loadTasks();
   }
 };
 
