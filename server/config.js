@@ -19,7 +19,7 @@ const config = {
 
   botToken: env('BOT_TOKEN'),
   botUsername: env('BOT_USERNAME', 'Pay_Plus_Bot').replace(/^@/, ''),
-  appShortName: env('APP_SHORT_NAME', 'app'),
+  appShortName: env('APP_SHORT_NAME').replace(/^\/+|\/+$/g, ''),
   supportUsername: env('SUPPORT_USERNAME').replace(/^@/, ''),
   botPolling: bool('BOT_POLLING', true),
 

@@ -48,9 +48,19 @@ async function isChatMember(chatId, userId) {
   return ['creator', 'administrator', 'member', 'restricted'].includes(m.status) && m.is_member !== false;
 }
 
+/**
+ * Invite / open link.
+ * - APP_SHORT_NAME set: opens the Mini App directly  -> t.me/<bot>/<short>?startapp=<id>
+ * - APP_SHORT_NAME empty: opens the bot chat          -> t.me/<bot>?start=<id>
+ *   (the bot answers /start with an "Open PayPlus" button that carries the referral)
+ */
 function appLink(startParam) {
-  const base = `https://t.me/${config.botUsername}/${config.appShortName}`;
-  return startParam ? `${base}?startapp=${encodeURIComponent(startParam)}` : base;
+  const p = startParam ? encodeURIComponent(startParam) : '';
+  if (config.appShortName) {
+    const base = `https://t.me/${config.botUsername}/${config.appShortName}`;
+    return p ? `${base}?startapp=${p}` : base;
+  }
+  return `https://t.me/${config.botUsername}${p ? `?start=${p}` : ''}`;
 }
 
 /** Handle bot updates: reply to /start with a button that opens the Mini App. */
@@ -61,7 +71,7 @@ async function handleUpdate(update) {
   const name = msg.from?.first_name || 'there';
   const button = config.webappUrl
     ? { text: '💰 Open PayPlus', web_app: { url: `${config.webappUrl}/${payload ? `?ref=${encodeURIComponent(payload)}` : ''}` } }
-    : { text: '💰 Open PayPlus', url: appLink(payload) };
+    : { text: '💰 Open PayPlus', url: config.appShortName ? appLink(payload) : `https://t.me/${config.botUsername}` };
   await botApi('sendMessage', {
     chat_id: msg.chat.id,
     text: `👋 Hi ${name}!\n\nWelcome to *PayPlus* — earn money by watching short ads, completing simple tasks and inviting friends.\n\nTap the button below to start earning 👇`,
