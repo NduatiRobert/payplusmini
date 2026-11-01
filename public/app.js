@@ -335,19 +335,51 @@
   };
 
   // ------------------------------------------------------------ invite
-  $('#copyBtn').onclick = async () => {
-    const link = S.invite.link;
-    try { await navigator.clipboard.writeText(link); } catch {
-      const ta = document.createElement('textarea'); ta.value = link; document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); ta.remove();
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {
+      try {
+        const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+      } catch { return false; }
     }
+  }
+
+  $('#copyBtn').onclick = async () => {
+    await copyText(S.invite.link);
     haptic('success');
     toast(t('copied'), 'success');
   };
-  $('#shareBtn').onclick = () => {
-    const url = `https://t.me/share/url?url=${encodeURIComponent(S.invite.link)}&text=${encodeURIComponent(t('shareText'))}`;
-    openLink(url);
+  $('#shareBtn').onclick = () => share('telegram');
+
+  // Social sharing. Instagram and TikTok have no "share a link" web address, so we copy the message and open the app.
+  const SHARE = {
+    whatsapp: (l, m) => `https://wa.me/?text=${encodeURIComponent(`${m}\n${l}`)}`,
+    telegram: (l, m) => `https://t.me/share/url?url=${encodeURIComponent(l)}&text=${encodeURIComponent(m)}`,
+    x:        (l, m) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(m)}&url=${encodeURIComponent(l)}`,
+    facebook: (l)    => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(l)}`,
+    reddit:   (l, m) => `https://www.reddit.com/submit?url=${encodeURIComponent(l)}&title=${encodeURIComponent(m)}`,
+    linkedin: (l)    => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(l)}`,
   };
+  const COPY_AND_OPEN = { instagram: ['Instagram', 'https://www.instagram.com/'], tiktok: ['TikTok', 'https://www.tiktok.com/'] };
+
+  async function share(net) {
+    const link = S.invite.link;
+    const msg = t('shareText');
+    if (SHARE[net]) return openLink(SHARE[net](link, msg));
+    if (COPY_AND_OPEN[net]) {
+      const [name, url] = COPY_AND_OPEN[net];
+      await copyText(`${msg}\n${link}`);
+      haptic('success');
+      toast(t('copiedPasteIn', { app: name }), 'success');
+      setTimeout(() => openLink(url), 1200);
+      return;
+    }
+    if (net === 'more' && navigator.share) {
+      try { await navigator.share({ title: 'PayPlus', text: msg, url: link }); } catch {}
+    }
+  }
+  $$('[data-share]').forEach((b) => (b.onclick = () => share(b.dataset.share)));
+  if (navigator.share) $('#shareMore').hidden = false;
 
   // ------------------------------------------------------------ withdraw
   const METHOD_FIELDS = {

@@ -331,6 +331,27 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 .task-item-text small { font-size: 11.5px; font-weight: 700; color: #a8842e; }
 .gold-btn.sm { min-width: 84px; padding: 8px 12px; font-size: 13px; border-radius: 9px; }
 
+/* social share */
+.share-label { margin: 16px 2px 10px; font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #6b7083; text-align: center; }
+.share-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; }
+.share-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--ink); }
+.share-btn i { font-style: normal; }
+.share-btn:active .s-ic { transform: scale(.92); }
+.s-ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15); transition: transform .1s; }
+.s-ic svg { width: 22px; height: 22px; }
+.s-ic.whatsapp { background: #25d366; }
+.s-ic.telegram { background: #229ed9; }
+.s-ic.telegram svg { width: 20px; height: 20px; margin-right: 2px; }
+.s-ic.xs { background: #111; }
+.s-ic.xs svg { width: 18px; height: 18px; }
+.s-ic.facebook { background: #1877f2; }
+.s-ic.instagram { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%); }
+.s-ic.tiktok { background: #010101; }
+.s-ic.reddit { background: #ff4500; }
+.s-ic.linkedin { background: #0a66c2; }
+.s-ic.linkedin svg { width: 19px; height: 19px; }
+.s-ic.more { background: linear-gradient(180deg, #6b6e80, #474a5c); }
+
 .demo-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:90;background:#23252f;color:#ffe48a;font:600 11px Inter,sans-serif;padding:4px 10px;border-radius:0 0 10px 10px;white-space:nowrap}.demo-banner button{color:#fff;text-decoration:underline;font-size:11px;padding:0 0 0 4px}.topbar{padding-top:26px}</style>
 </head>
 <body>
@@ -436,6 +457,18 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
             <button class="dark-btn" id="copyBtn"><svg class="ic"><use href="#i-copy"/></svg><span data-i18n="copy">Copy</span></button>
           </div>
           <button class="outline-btn" id="shareBtn"><svg class="ic"><use href="#i-send"/></svg><span data-i18n="shareWithFriends">Share with Friends</span></button>
+          <div class="share-label" data-i18n="shareOnSocial">Or share on social media</div>
+          <div class="share-grid">
+            <button class="share-btn" data-share="whatsapp"><span class="s-ic whatsapp"><svg><use href="#i-whatsapp"/></svg></span>WhatsApp</button>
+            <button class="share-btn" data-share="telegram"><span class="s-ic telegram"><svg><use href="#i-send"/></svg></span>Telegram</button>
+            <button class="share-btn" data-share="x"><span class="s-ic xs"><svg><use href="#i-x"/></svg></span>X</button>
+            <button class="share-btn" data-share="facebook"><span class="s-ic facebook"><svg><use href="#i-facebook"/></svg></span>Facebook</button>
+            <button class="share-btn" data-share="instagram"><span class="s-ic instagram"><svg><use href="#i-instagram"/></svg></span>Instagram</button>
+            <button class="share-btn" data-share="tiktok"><span class="s-ic tiktok"><svg><use href="#i-tiktok"/></svg></span>TikTok</button>
+            <button class="share-btn" data-share="reddit"><span class="s-ic reddit"><svg><use href="#i-reddit"/></svg></span>Reddit</button>
+            <button class="share-btn" data-share="linkedin"><span class="s-ic linkedin"><svg><use href="#i-linkedin"/></svg></span>LinkedIn</button>
+            <button class="share-btn" data-share="more" id="shareMore" hidden><span class="s-ic more"><svg><use href="#i-share"/></svg></span><i data-i18n="more">More</i></button>
+          </div>
           <p class="hint" id="refHint"></p>
         </div>
         <div class="stats">
@@ -558,6 +591,10 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
       <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></symbol>
       <symbol id="i-tiktok" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 2h-3.3v13.2a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1V9a6.3 6.3 0 1 0 5.3 6.2V8.6a7.9 7.9 0 0 0 4.4 1.4V6.7a4.6 4.6 0 0 1-4.4-4.7z"/></symbol>
       <symbol id="i-facebook" viewBox="0 0 24 24" fill="currentColor"><path d="M14 8.5V6.7c0-.8.2-1.3 1.4-1.3H17V2.2c-.3 0-1.3-.2-2.5-.2-2.5 0-4.1 1.5-4.1 4.2v2.3H7.6v3.6h2.8V22H14v-9.9h2.8l.4-3.6H14z"/></symbol>
+      <symbol id="i-whatsapp" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></symbol>
+      <symbol id="i-reddit" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.1a2.2 2.2 0 0 0-3.7-1.6 10.8 10.8 0 0 0-5.8-1.8l1-4.6 3.2.7a1.6 1.6 0 1 0 .2-1l-3.6-.8a.5.5 0 0 0-.6.4l-1.1 5.2a10.8 10.8 0 0 0-5.9 1.8 2.2 2.2 0 1 0-2.4 3.6v.6c0 3.4 3.9 6.1 8.7 6.1s8.7-2.7 8.7-6.1v-.6a2.2 2.2 0 0 0 1.3-1.9zM7.1 13.6a1.5 1.5 0 1 1 1.5 1.5 1.5 1.5 0 0 1-1.5-1.5zm8.6 4.1a5.6 5.6 0 0 1-3.7 1.1 5.6 5.6 0 0 1-3.7-1.1.4.4 0 0 1 .6-.6 4.8 4.8 0 0 0 3.1.9 4.8 4.8 0 0 0 3.1-.9.4.4 0 1 1 .6.6zm-.3-2.6a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5z"/></symbol>
+      <symbol id="i-linkedin" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.2c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7V21h-4z"/></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
       <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2M9.5 11l2 2 3-4"/></symbol>
       <symbol id="i-tether" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3.4h-5.2v2.2c3.6.2 6.2.9 6.2 1.8s-2.6 1.6-6.2 1.8V20h-3.6v-6.8C6.6 13 4 12.3 4 11.4s2.6-1.6 6.2-1.8V7.4H5V4zm5.2 7v1.2c.6 0 1.2.1 1.8.1s1.2 0 1.8-.1V11c-.6 0-1.2-.1-1.8-.1s-1.2 0-1.8.1zm-1.4-.1c-1.5.2-2.6.4-2.6.6 0 .3 1.1.5 2.6.6v-1.2zm6.4 0v1.2c1.5-.2 2.6-.4 2.6-.6s-1.1-.5-2.6-.6z"/></symbol>
@@ -684,7 +721,7 @@ window.I18N = {
     taskStartedHint: 'Complete the task, then come back and tap Check.',
     inviteEarn: 'Invite & Earn', forEachInvite: 'for each invite',
     inviteSub: 'Copy and share your invite link with friends to earn more.',
-    yourInviteLink: 'Your Invite Link', copy: 'Copy', copied: 'Copied!', shareWithFriends: 'Share with Friends',
+    yourInviteLink: 'Your Invite Link', copy: 'Copy', copied: 'Copied!', shareWithFriends: 'Share with Friends', shareOnSocial: 'Or share on social media', more: 'More', copiedPasteIn: 'Invite link copied! Paste it in {app}.',
     refHint: 'You get paid once your friend watches {n} ads.',
     shareText: '💰 Join me on PayPlus and earn money by watching ads and completing simple tasks!',
     friendsInvited: 'Friends Invited', earnedFromInvites: 'Earned From Invites',
@@ -718,7 +755,7 @@ window.I18N = {
     taskStartedHint: 'Kamilisha kazi, kisha urudi ubonyeze Hakiki.',
     inviteEarn: 'Alika & Upate', forEachInvite: 'kwa kila mwaliko',
     inviteSub: 'Nakili na utume kiungo chako kwa marafiki upate zaidi.',
-    yourInviteLink: 'Kiungo Chako cha Mwaliko', copy: 'Nakili', copied: 'Imenakiliwa!', shareWithFriends: 'Shiriki na Marafiki',
+    yourInviteLink: 'Kiungo Chako cha Mwaliko', copy: 'Nakili', copied: 'Imenakiliwa!', shareWithFriends: 'Shiriki na Marafiki', shareOnSocial: 'Au shiriki kwenye mitandao ya kijamii', more: 'Zaidi', copiedPasteIn: 'Kiungo kimenakiliwa! Kibandike kwenye {app}.',
     refHint: 'Unalipwa rafiki yako akishatazama matangazo {n}.',
     shareText: '💰 Jiunge nami PayPlus upate pesa kwa kutazama matangazo na kukamilisha kazi rahisi!',
     friendsInvited: 'Marafiki Walioalikwa', earnedFromInvites: 'Mapato ya Mialiko',
@@ -752,7 +789,7 @@ window.I18N = {
     taskStartedHint: 'Terminez la tâche puis appuyez sur Vérifier.',
     inviteEarn: 'Invitez & gagnez', forEachInvite: 'par invitation',
     inviteSub: 'Copiez et partagez votre lien pour gagner plus.',
-    yourInviteLink: "Votre lien d'invitation", copy: 'Copier', copied: 'Copié !', shareWithFriends: 'Partager avec des amis',
+    yourInviteLink: "Votre lien d'invitation", copy: 'Copier', copied: 'Copié !', shareWithFriends: 'Partager avec des amis', shareOnSocial: 'Ou partagez sur les réseaux sociaux', more: 'Plus', copiedPasteIn: "Lien copié ! Collez-le dans {app}.",
     refHint: 'Vous êtes payé quand votre ami a regardé {n} pubs.',
     shareText: '💰 Rejoins-moi sur PayPlus et gagne de l’argent en regardant des pubs !',
     friendsInvited: 'Amis invités', earnedFromInvites: 'Gains des invitations',
@@ -1106,19 +1143,51 @@ window.I18N = {
   };
 
   // ------------------------------------------------------------ invite
-  $('#copyBtn').onclick = async () => {
-    const link = S.invite.link;
-    try { await navigator.clipboard.writeText(link); } catch {
-      const ta = document.createElement('textarea'); ta.value = link; document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); ta.remove();
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {
+      try {
+        const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+      } catch { return false; }
     }
+  }
+
+  $('#copyBtn').onclick = async () => {
+    await copyText(S.invite.link);
     haptic('success');
     toast(t('copied'), 'success');
   };
-  $('#shareBtn').onclick = () => {
-    const url = `https://t.me/share/url?url=${encodeURIComponent(S.invite.link)}&text=${encodeURIComponent(t('shareText'))}`;
-    openLink(url);
+  $('#shareBtn').onclick = () => share('telegram');
+
+  // Social sharing. Instagram and TikTok have no "share a link" web address, so we copy the message and open the app.
+  const SHARE = {
+    whatsapp: (l, m) => `https://wa.me/?text=${encodeURIComponent(`${m}\n${l}`)}`,
+    telegram: (l, m) => `https://t.me/share/url?url=${encodeURIComponent(l)}&text=${encodeURIComponent(m)}`,
+    x:        (l, m) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(m)}&url=${encodeURIComponent(l)}`,
+    facebook: (l)    => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(l)}`,
+    reddit:   (l, m) => `https://www.reddit.com/submit?url=${encodeURIComponent(l)}&title=${encodeURIComponent(m)}`,
+    linkedin: (l)    => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(l)}`,
   };
+  const COPY_AND_OPEN = { instagram: ['Instagram', 'https://www.instagram.com/'], tiktok: ['TikTok', 'https://www.tiktok.com/'] };
+
+  async function share(net) {
+    const link = S.invite.link;
+    const msg = t('shareText');
+    if (SHARE[net]) return openLink(SHARE[net](link, msg));
+    if (COPY_AND_OPEN[net]) {
+      const [name, url] = COPY_AND_OPEN[net];
+      await copyText(`${msg}\n${link}`);
+      haptic('success');
+      toast(t('copiedPasteIn', { app: name }), 'success');
+      setTimeout(() => openLink(url), 1200);
+      return;
+    }
+    if (net === 'more' && navigator.share) {
+      try { await navigator.share({ title: 'PayPlus', text: msg, url: link }); } catch {}
+    }
+  }
+  $$('[data-share]').forEach((b) => (b.onclick = () => share(b.dataset.share)));
+  if (navigator.share) $('#shareMore').hidden = false;
 
   // ------------------------------------------------------------ withdraw
   const METHOD_FIELDS = {
