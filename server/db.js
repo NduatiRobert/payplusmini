@@ -85,6 +85,8 @@ CREATE TABLE IF NOT EXISTS withdrawals (
 );
 CREATE INDEX IF NOT EXISTS idx_wd_status ON withdrawals(status);
 
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
 -- Referral seen by the bot (/start <inviterId>) before the user opened the Mini App.
 CREATE TABLE IF NOT EXISTS pending_referrals (
   user_id      INTEGER PRIMARY KEY,
@@ -152,6 +154,36 @@ function takePendingReferral(userId) {
   return row ? row.referrer_id : null;
 }
 
+db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('created_at', ?)").run(String(Date.now()));
+
+/**
+ * Is the database on storage that survives a redeploy? In Docker, only a mounted volume/bind mount does.
+ * persistent: true | false | null (unknown, e.g. not Linux).
+ */
+function storageInfo() {
+  const dir = path.dirname(dbFile);
+  let mountPoint = null;
+  try {
+    for (const line of fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n')) {
+      const mp = line.split(' ')[4];
+      if (mp && (dir === mp || dir.startsWith(mp.endsWith('/') ? mp : mp + '/')) && (!mountPoint || mp.length > mountPoint.length)) mountPoint = mp;
+    }
+  } catch { /* not Linux */ }
+  const inDocker = fs.existsSync('/.dockerenv');
+  return {
+    dbPath: dbFile,
+    mountPoint,
+    persistent: mountPoint === null ? null : (inDocker ? mountPoint !== '/' : true),
+    dbCreatedAt: Number(db.prepare("SELECT value FROM meta WHERE key='created_at'").get()?.value || 0),
+  };
+}
+const st = storageInfo();
+if (st.persistent === false) {
+  console.warn(`⚠️  DATABASE IS NOT ON A PERSISTENT VOLUME (${st.dbPath}). All users and balances are erased on every redeploy. In Coolify add Persistent Storage with destination ${path.dirname(dbFile)}.`);
+} else {
+  console.log(`[db] ${st.dbPath} (volume: ${st.mountPoint ?? 'unknown'}), created ${new Date(st.dbCreatedAt).toISOString()}`);
+}
+
 const toMicro = (usd) => Math.round(Number(usd) * 1_000_000);
 const toUsd = (micro) => Math.round(Number(micro || 0) / 10_000) / 100; // 2 decimals
 
@@ -164,4 +196,4 @@ function addBalance(userId, amountMicro, type, ref = null) {
   ledger.run(userId, amountMicro, type, ref, Date.now());
 }
 
-module.exports = { db, toMicro, toUsd, addBalance, attachReferrer, savePendingReferral, takePendingReferral };
+module.exports = { db, toMicro, toUsd, addBalance, attachReferrer, savePendingReferral, takePendingReferral, storageInfo };

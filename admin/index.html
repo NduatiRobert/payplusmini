@@ -30,6 +30,9 @@
   .mono { font-family: ui-monospace, monospace; font-size: 12.5px; word-break: break-all; }
   #login { max-width: 360px; margin: 80px auto; } #login input { width: 100%; margin: 10px 0; }
   .muted { color: #888; font-size: 12px; }
+  .banner { padding: 12px 14px; border-radius: 12px; margin-bottom: 14px; background: #fff; border: 1px solid #ece3c8; font-size: 14px; line-height: 1.5; }
+  .banner.bad { background: #fde2e2; border-color: #e8a3a3; color: #7a1d1d; }
+  .banner.good { background: #e3f6ea; border-color: #a6dcb8; }
   .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
 </style>
 </head>
@@ -50,7 +53,7 @@
     <button data-s="users">Users</button>
   </div>
 
-  <section class="section active" id="s-dashboard"><div class="grid" id="stats"></div></section>
+  <section class="section active" id="s-dashboard"><div id="storage"></div><div class="grid" id="stats"></div></section>
 
   <section class="section" id="s-withdrawals">
     <div class="row">
@@ -122,6 +125,14 @@ async function loadStats() {
   const s = await api('/stats');
   const items = [['Users', s.users], ['Active (24h)', s.activeToday], ['Ads today', s.adsToday], ['Ads total', s.adsTotal],
     ['User balances', money(s.totalBalances)], ['Total paid out', money(s.totalPaid)], ['Pending withdrawals', s.pendingWithdrawals], ['Pending amount', money(s.pendingAmount)]];
+  const st = s.storage || {};
+  const created = st.dbCreatedAt ? date(st.dbCreatedAt) : '?';
+  $('#storage').innerHTML = st.persistent === false
+    ? `<div class="banner bad"><b>⚠️ Your database is NOT on permanent storage.</b> All users, balances, referrals and tasks are erased every time the app is redeployed.
+       In Coolify open this app → <b>Persistent Storage</b> → <b>+ Add</b> → <b>Volume</b>, destination path <code>/data</code>, then redeploy.
+       <div class="muted">Database: ${esc(st.dbPath)} · created ${created} · server started ${date(s.serverStartedAt)}</div></div>`
+    : `<div class="banner ${st.persistent ? 'good' : ''}">${st.persistent ? '✅ Database is on permanent storage' : 'ℹ️ Storage type unknown'}
+       <span class="muted">· ${esc(st.dbPath)} (volume ${esc(st.mountPoint || '?')}) · created ${created} · server started ${date(s.serverStartedAt)}</span></div>`;
   $('#stats').innerHTML = items.map(([k, v]) => `<div class="card"><small>${k}</small><div>${v}</div></div>`).join('');
 }
 

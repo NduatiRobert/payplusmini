@@ -3,13 +3,14 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const config = require('./config');
-const { db, toMicro, toUsd, addBalance, attachReferrer, takePendingReferral } = require('./db');
+const { db, toMicro, toUsd, addBalance, attachReferrer, takePendingReferral, storageInfo } = require('./db');
 const tg = require('./telegram');
 
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '50kb' }));
 
+const SERVER_STARTED_AT = Date.now();
 const today = () => new Date().toISOString().slice(0, 10); // UTC day
 const now = () => Date.now();
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
@@ -266,6 +267,8 @@ admin.get('/stats', (req, res) => {
     totalPaid: toUsd(one("SELECT SUM(amount) FROM withdrawals WHERE status='paid'")),
     pendingWithdrawals: one("SELECT COUNT(*) FROM withdrawals WHERE status='pending'"),
     pendingAmount: toUsd(one("SELECT SUM(amount) FROM withdrawals WHERE status='pending'")),
+    storage: storageInfo(),
+    serverStartedAt: SERVER_STARTED_AT,
   });
 });
 
