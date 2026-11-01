@@ -308,3 +308,8 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 @keyframes spin { to { transform: rotate(360deg); } }
 .blocked { padding: 40px 24px; text-align: center; color: var(--muted); }
 .blocked h2 { color: var(--ink); }
+
+.load-fail { text-align: center; padding: 24px; max-width: 300px; color: var(--text); font-size: 14px; }
+.load-fail button { margin-top: 10px; padding: 12px 28px; border-radius: 12px; color: #fff; font-weight: 700;
+  background: linear-gradient(180deg, #4a4d60, #23252f); }
+.load-err { font: 11px ui-monospace, monospace; color: #a12828; word-break: break-word; }

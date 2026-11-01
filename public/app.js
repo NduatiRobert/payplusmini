@@ -4,13 +4,18 @@
   const $$ = (s) => [...document.querySelectorAll(s)];
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const money = (n) => `$${Number(n || 0).toFixed(2)}`;
+  // localStorage can throw in some in-app browsers; never let that stop the app.
+  const store = {
+    get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+  };
 
   let S = null;            // server state
   let tasks = [];
   let method = 'mobile_topup';
   let adBusy = false;
   let cooldownTimer = null;
-  let lang = localStorage.getItem('pp_lang') || (tg?.initDataUnsafe?.user?.language_code || 'en').slice(0, 2);
+  let lang = store.get('pp_lang') || (tg?.initDataUnsafe?.user?.language_code || 'en').slice(0, 2);
   if (!I18N[lang]) lang = 'en';
 
   const t = (k, vars = {}) => {
@@ -30,16 +35,24 @@
   const refParam = new URLSearchParams(location.search).get('ref') || '';
 
   async function api(path, body) {
-    const res = await fetch(`/api${path}`, {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    let res;
+    try {
+      res = await fetch(`/api${path}`, {
+      signal: ctrl.signal,
       method: body !== undefined ? 'POST' : 'GET',
       headers: {
         'Content-Type': 'application/json',
         'X-Telegram-Init-Data': tg?.initData || '',
         'X-Ref': refParam,
-        ...(localStorage.getItem('pp_dev_user') ? { 'X-Dev-User-Id': localStorage.getItem('pp_dev_user') } : {}),
+        ...(store.get('pp_dev_user') ? { 'X-Dev-User-Id': store.get('pp_dev_user') } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+      });
+    } catch (err) {
+      throw new Error(err.name === 'AbortError' ? 'The server is taking too long to respond. Please try again.' : 'Network error. Check your connection and try again.');
+    } finally { clearTimeout(timer); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { const e = new Error(data.error || 'Network error'); e.status = res.status; throw e; }
     return data;
@@ -77,7 +90,7 @@
   };
   $('#langSheet').onclick = (e) => {
     const b = e.target.closest('[data-lang]');
-    if (b) { lang = b.dataset.lang; localStorage.setItem('pp_lang', lang); applyLang(); }
+    if (b) { lang = b.dataset.lang; store.set('pp_lang', lang); applyLang(); }
     if (b || e.target.id === 'langSheet') $('#langSheet').classList.remove('open');
   };
 
@@ -160,16 +173,24 @@
   const DEFAULT_ZONE = '11484941';
   let monetagReady = null;
   function loadMonetag(zone) {
-    if (typeof window[`show_${zone}`] === 'function') return Promise.resolve();
+    const name = `show_${zone}`;
+    if (typeof window[name] === 'function') return Promise.resolve();
     if (monetagReady) return monetagReady;
     monetagReady = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://libtl.com/sdk.js';
-      s.dataset.zone = zone;
-      s.dataset.sdk = `show_${zone}`;
-      s.onload = () => resolve();
-      s.onerror = () => { monetagReady = null; reject(new Error('Ad SDK failed to load')); };
-      document.head.appendChild(s);
+      // The tag in <head> loads asynchronously; only add another one if it's for a different zone.
+      if (!document.querySelector(`script[data-sdk="${name}"]`)) {
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://libtl.com/sdk.js';
+        s.dataset.zone = zone;
+        s.dataset.sdk = name;
+        document.head.appendChild(s);
+      }
+      const started = Date.now();
+      const iv = setInterval(() => {
+        if (typeof window[name] === 'function') { clearInterval(iv); resolve(); }
+        else if (Date.now() - started > 15000) { clearInterval(iv); monetagReady = null; reject(new Error(t('adNotAvailable'))); }
+      }, 200);
     });
     return monetagReady;
   }
@@ -370,9 +391,12 @@
     try {
       S = await api('/me', {});
       render();
-      if (S.config.monetagZoneId) loadMonetag(S.config.monetagZoneId).catch(() => {});
+      const zone = S.config.monetagZoneId || (S.config.devMode ? '' : DEFAULT_ZONE);
+      if (zone) loadMonetag(zone).catch(() => {});
     } catch (e) {
-      $('#scroll').innerHTML = `<div class="blocked"><h2>PayPlus</h2><p>${escapeHtml(e.status === 401 ? t('openInTelegram') : e.message)}</p></div>`;
+      const detail = e.status && e.status !== 401 ? ` (error ${e.status})` : '';
+      $('#scroll').innerHTML = `<div class="blocked"><h2>PayPlus</h2><p>${escapeHtml(e.status === 401 ? t('openInTelegram') : e.message + detail)}</p>
+        <button class="dark-btn" onclick="location.reload()">Reload</button></div>`;
       $('.bottom-nav').style.display = 'none';
     }
     $('#loader').classList.add('hide');

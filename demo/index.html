@@ -317,6 +317,11 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 .blocked { padding: 40px 24px; text-align: center; color: var(--muted); }
 .blocked h2 { color: var(--ink); }
 
+.load-fail { text-align: center; padding: 24px; max-width: 300px; color: var(--text); font-size: 14px; }
+.load-fail button { margin-top: 10px; padding: 12px 28px; border-radius: 12px; color: #fff; font-weight: 700;
+  background: linear-gradient(180deg, #4a4d60, #23252f); }
+.load-err { font: 11px ui-monospace, monospace; color: #a12828; word-break: break-word; }
+
 .demo-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:90;background:#23252f;color:#ffe48a;font:600 11px Inter,sans-serif;padding:4px 10px;border-radius:0 0 10px 10px;white-space:nowrap}.demo-banner button{color:#fff;text-decoration:underline;font-size:11px;padding:0 0 0 4px}.topbar{padding-top:26px}</style>
 </head>
 <body>
@@ -498,6 +503,28 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 
   <div class="toast" id="toast"></div>
   <div class="loader" id="loader"><div class="spinner"></div></div>
+  <script>
+    // Safety net: never leave the user stuck on the spinner, and show what went wrong.
+    (function () {
+      var lastError = '';
+      function fail(msg) {
+        var l = document.getElementById('loader');
+        if (!l || l.classList.contains('hide')) return;
+        l.innerHTML = '<div class="load-fail"><p>' + msg + '</p>' +
+          (lastError ? '<p class="load-err"></p>' : '') + '<button onclick="location.reload()">Reload</button></div>';
+        if (lastError) l.querySelector('.load-err').textContent = lastError;
+      }
+      window.addEventListener('error', function (e) {
+        var src = (e.target && e.target.src) || '';
+        lastError = e.message ? e.message + (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : '') : 'Failed to load ' + src;
+        fail('Something went wrong while loading. Please tap Reload.');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        lastError = String((e.reason && e.reason.message) || e.reason);
+      });
+      setTimeout(function () { fail('This is taking too long. Check your internet connection and tap Reload.'); }, 20000);
+    })();
+  </script>
 
   <!-- Icons -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -733,13 +760,18 @@ window.I18N = {
   const $$ = (s) => [...document.querySelectorAll(s)];
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const money = (n) => `$${Number(n || 0).toFixed(2)}`;
+  // localStorage can throw in some in-app browsers; never let that stop the app.
+  const store = {
+    get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+  };
 
   let S = null;            // server state
   let tasks = [];
   let method = 'mobile_topup';
   let adBusy = false;
   let cooldownTimer = null;
-  let lang = localStorage.getItem('pp_lang') || (tg?.initDataUnsafe?.user?.language_code || 'en').slice(0, 2);
+  let lang = store.get('pp_lang') || (tg?.initDataUnsafe?.user?.language_code || 'en').slice(0, 2);
   if (!I18N[lang]) lang = 'en';
 
   const t = (k, vars = {}) => {
@@ -759,16 +791,24 @@ window.I18N = {
   const refParam = new URLSearchParams(location.search).get('ref') || '';
 
   async function api(path, body) {
-    const res = await fetch(`/api${path}`, {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    let res;
+    try {
+      res = await fetch(`/api${path}`, {
+      signal: ctrl.signal,
       method: body !== undefined ? 'POST' : 'GET',
       headers: {
         'Content-Type': 'application/json',
         'X-Telegram-Init-Data': tg?.initData || '',
         'X-Ref': refParam,
-        ...(localStorage.getItem('pp_dev_user') ? { 'X-Dev-User-Id': localStorage.getItem('pp_dev_user') } : {}),
+        ...(store.get('pp_dev_user') ? { 'X-Dev-User-Id': store.get('pp_dev_user') } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+      });
+    } catch (err) {
+      throw new Error(err.name === 'AbortError' ? 'The server is taking too long to respond. Please try again.' : 'Network error. Check your connection and try again.');
+    } finally { clearTimeout(timer); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { const e = new Error(data.error || 'Network error'); e.status = res.status; throw e; }
     return data;
@@ -806,7 +846,7 @@ window.I18N = {
   };
   $('#langSheet').onclick = (e) => {
     const b = e.target.closest('[data-lang]');
-    if (b) { lang = b.dataset.lang; localStorage.setItem('pp_lang', lang); applyLang(); }
+    if (b) { lang = b.dataset.lang; store.set('pp_lang', lang); applyLang(); }
     if (b || e.target.id === 'langSheet') $('#langSheet').classList.remove('open');
   };
 
@@ -889,16 +929,24 @@ window.I18N = {
   const DEFAULT_ZONE = '11484941';
   let monetagReady = null;
   function loadMonetag(zone) {
-    if (typeof window[`show_${zone}`] === 'function') return Promise.resolve();
+    const name = `show_${zone}`;
+    if (typeof window[name] === 'function') return Promise.resolve();
     if (monetagReady) return monetagReady;
     monetagReady = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://libtl.com/sdk.js';
-      s.dataset.zone = zone;
-      s.dataset.sdk = `show_${zone}`;
-      s.onload = () => resolve();
-      s.onerror = () => { monetagReady = null; reject(new Error('Ad SDK failed to load')); };
-      document.head.appendChild(s);
+      // The tag in <head> loads asynchronously; only add another one if it's for a different zone.
+      if (!document.querySelector(`script[data-sdk="${name}"]`)) {
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://libtl.com/sdk.js';
+        s.dataset.zone = zone;
+        s.dataset.sdk = name;
+        document.head.appendChild(s);
+      }
+      const started = Date.now();
+      const iv = setInterval(() => {
+        if (typeof window[name] === 'function') { clearInterval(iv); resolve(); }
+        else if (Date.now() - started > 15000) { clearInterval(iv); monetagReady = null; reject(new Error(t('adNotAvailable'))); }
+      }, 200);
     });
     return monetagReady;
   }
@@ -1099,9 +1147,12 @@ window.I18N = {
     try {
       S = await api('/me', {});
       render();
-      if (S.config.monetagZoneId) loadMonetag(S.config.monetagZoneId).catch(() => {});
+      const zone = S.config.monetagZoneId || (S.config.devMode ? '' : DEFAULT_ZONE);
+      if (zone) loadMonetag(zone).catch(() => {});
     } catch (e) {
-      $('#scroll').innerHTML = `<div class="blocked"><h2>PayPlus</h2><p>${escapeHtml(e.status === 401 ? t('openInTelegram') : e.message)}</p></div>`;
+      const detail = e.status && e.status !== 401 ? ` (error ${e.status})` : '';
+      $('#scroll').innerHTML = `<div class="blocked"><h2>PayPlus</h2><p>${escapeHtml(e.status === 401 ? t('openInTelegram') : e.message + detail)}</p>
+        <button class="dark-btn" onclick="location.reload()">Reload</button></div>`;
       $('.bottom-nav').style.display = 'none';
     }
     $('#loader').classList.add('hide');

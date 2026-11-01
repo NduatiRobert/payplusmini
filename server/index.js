@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
@@ -342,8 +343,21 @@ admin.post('/users/:id', (req, res) => {
 app.use('/api/admin', admin);
 
 // ---------------------------------------------------------------- static + errors
-app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// The Mini App page is always sent fresh, and links its CSS/JS with ?v=<content hash>.
+// This stops Telegram's in-app browser from mixing a cached old app.js with a new page.
+const publicDir = path.join(__dirname, '..', 'public');
+const fileHash = (f) => crypto.createHash('md5').update(fs.readFileSync(path.join(publicDir, f))).digest('hex').slice(0, 10);
+const indexHtml = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8')
+  .replace(/(href|src)="(styles\.css|i18n\.js|app\.js)"/g, (m, attr, f) => `${attr}="${f}?v=${fileHash(f)}"`);
+const sendIndex = (req, res) => res.set('Cache-Control', 'no-store').type('html').send(indexHtml);
+app.get(['/', '/index.html'], sendIndex);
+
+app.use('/admin', (req, res, next) => { res.set('Cache-Control', 'no-cache'); next(); },
+  express.static(path.join(__dirname, '..', 'admin'), { cacheControl: false }));
+app.use((req, res, next) => {
+  res.set('Cache-Control', req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache');
+  next();
+}, express.static(publicDir, { cacheControl: false, index: false }));
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
 app.use((err, req, res, _next) => {
