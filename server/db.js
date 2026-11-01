@@ -129,15 +129,22 @@ if (tasksSql.includes('CHECK (type IN')) {
  * Only allowed while the user has no referrer yet, hasn't watched any ads, and joined in the last 48 hours.
  */
 const REFERRAL_WINDOW_MS = 48 * 3600 * 1000;
-function attachReferrer(userId, raw) {
+function attachReferrer(userId, raw, source = '') {
   const refId = Number(String(raw ?? '').trim().replace(/^ref_?/i, ''));
-  if (!Number.isSafeInteger(refId) || refId <= 0 || refId === userId) return false;
+  const why = (reason) => { console.log(`[ref] user ${userId} <- ${raw} via ${source || '?'}: NOT linked (${reason})`); return false; };
+  if (!Number.isSafeInteger(refId) || refId <= 0) return why('not a user id');
+  if (refId === userId) return why('own link');
   const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
   const inviter = db.prepare('SELECT id, referrer_id FROM users WHERE id=?').get(refId);
-  if (!user || !inviter) return false;
-  if (user.referrer_id || user.ads_watched > 0 || Date.now() - user.created_at > REFERRAL_WINDOW_MS) return false;
-  if (inviter.referrer_id === userId) return false; // no A<->B loops
-  return db.prepare('UPDATE users SET referrer_id=? WHERE id=? AND referrer_id IS NULL').run(refId, userId).changes > 0;
+  if (!user) return why('user has not opened the app yet; saved for later');
+  if (!inviter) return why(`inviter ${refId} is not a PayPlus user`);
+  if (user.referrer_id) return why(user.referrer_id === refId ? 'already linked' : `already referred by ${user.referrer_id}`);
+  if (user.ads_watched > 0) return why('user had already watched ads before using the link');
+  if (Date.now() - user.created_at > REFERRAL_WINDOW_MS) return why('account older than 48h');
+  if (inviter.referrer_id === userId) return why('loop: inviter was referred by this user');
+  const ok = db.prepare('UPDATE users SET referrer_id=? WHERE id=? AND referrer_id IS NULL').run(refId, userId).changes > 0;
+  if (ok) console.log(`[ref] user ${userId} referred by ${refId} via ${source || '?'}`);
+  return ok;
 }
 
 /** Remember a referral the bot saw in /start, and apply it right away if the user already exists. */
@@ -146,7 +153,8 @@ function savePendingReferral(userId, raw) {
   if (!Number.isSafeInteger(refId) || refId <= 0 || refId === userId) return;
   db.prepare(`INSERT INTO pending_referrals (user_id, referrer_id, created_at) VALUES (?,?,?)
               ON CONFLICT(user_id) DO NOTHING`).run(userId, refId, Date.now());
-  attachReferrer(userId, refId);
+  console.log(`[ref] bot /start: user ${userId} came from inviter ${refId}`);
+  if (db.prepare('SELECT 1 FROM users WHERE id=?').get(userId)) attachReferrer(userId, refId, 'bot /start');
 }
 
 function takePendingReferral(userId) {

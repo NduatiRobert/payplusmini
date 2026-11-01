@@ -85,7 +85,7 @@
   </section>
 
   <section class="section" id="s-users">
-    <div class="row"><input id="userQ" placeholder="Search by ID, username or name" style="min-width:260px" /><button id="userSearch">Search</button></div>
+    <form class="row" id="userForm" autocomplete="off"><input id="userQ" name="pp-user-search" type="search" autocomplete="off" placeholder="Search by ID, @username or name" style="min-width:260px" /><button id="userSearch">Search</button><button type="button" id="userClear">Show all</button><span class="muted" id="userCount"></span></form>
     <table><thead><tr><th>ID</th><th>Name</th><th>Balance</th><th>Earned</th><th>Ads</th><th>Invited</th><th>Referred by</th><th>Joined</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
   </section>
 </main>
@@ -186,11 +186,15 @@ $('#taskBody').onclick = async (e) => {
   }
 };
 
-$('#userSearch').onclick = loadUsers;
+$('#userForm').onsubmit = (e) => { e.preventDefault(); loadUsers(); };
+$('#userClear').onclick = () => { $('#userQ').value = ''; loadUsers(); };
 async function loadUsers() {
   const rows = await api('/users?q=' + encodeURIComponent($('#userQ').value));
+  const q = $('#userQ').value.trim();
+  $('#userCount').textContent = q ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for "${q}"` : `latest ${rows.length} users`;
+  if (!rows.length) { $('#userBody').innerHTML = `<tr><td colspan="9" class="muted">No users match "${esc(q)}". <a href="#" onclick="document.getElementById('userClear').click();return false">Show all users</a></td></tr>`; return; }
   $('#userBody').innerHTML = rows.map((u) => `<tr>
-    <td class="mono">${u.id}</td><td>${esc(u.first_name)} ${u.username ? '<div class="muted">@' + esc(u.username) + '</div>' : ''}${u.banned ? ' <b style="color:#b03a3a">BANNED</b>' : ''}</td>
+    <td class="mono">${u.id}</td><td>${esc(u.first_name)} ${esc(u.last_name || '')} ${u.username ? '<div class="muted">@' + esc(u.username) + '</div>' : ''}${u.banned ? ' <b style="color:#b03a3a">BANNED</b>' : ''}</td>
     <td>${money(u.balance)}</td><td>${money(u.total_earned)}</td><td>${u.ads_watched}</td><td>${u.invited}${u.invited ? `<div class="muted">earned ${money(u.invite_earned)}</div>` : ''}</td><td class="mono">${u.referrer_id || '—'}${u.referrer_id ? `<div class="muted">${u.referral_paid ? 'paid' : 'not paid yet'}</div>` : ''}</td><td>${date(u.created_at)}</td>
     <td><button class="small" data-adj="${u.id}">Adjust</button> <button class="small ${u.banned ? 'ok' : 'bad'}" data-ban="${u.id}" data-v="${u.banned ? 0 : 1}">${u.banned ? 'Unban' : 'Ban'}</button></td>
   </tr>`).join('');

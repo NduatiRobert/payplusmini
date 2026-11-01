@@ -42,11 +42,8 @@ function auth(req, res, next) {
   if (!user) q.insertUser.run(row);
   else q.touchUser.run(row);
   // Referral sources, most trusted first: signed start_param, the bot's /start record, the ?ref= from the bot's button.
-  if (!(user && user.referrer_id)) {
-    for (const ref of [verified.startParam, takePendingReferral(u.id), req.get('x-ref')]) {
-      if (ref && attachReferrer(u.id, ref)) break;
-    }
-  }
+  // Applied in POST /api/me (once per app open), not on every request.
+  req.refSources = [['startapp link', verified.startParam], ['bot /start', takePendingReferral(u.id)], ['?ref button', req.get('x-ref')]];
   user = q.getUser.get(u.id);
   if (user.banned) return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
   req.user = user;
@@ -94,7 +91,14 @@ function state(userId) {
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-app.post('/api/me', auth, (req, res) => res.json(state(req.user.id)));
+app.post('/api/me', auth, (req, res) => {
+  if (!req.user.referrer_id) {
+    for (const [src, ref] of req.refSources) {
+      if (ref && attachReferrer(req.user.id, ref, src)) break;
+    }
+  }
+  res.json(state(req.user.id));
+});
 
 // ---------------------------------------------------------------- ads (Monetag)
 const insertSession = db.prepare('INSERT INTO ad_sessions (token,user_id,day,created_at) VALUES (?,?,?,?)');
@@ -325,8 +329,9 @@ admin.delete('/tasks/:id', (req, res) => {
 admin.get('/users', (req, res) => {
   const s = String(req.query.q || '').trim().replace(/^@/, '');
   const rows = s
-    ? db.prepare('SELECT * FROM users WHERE id=? OR username LIKE ? OR first_name LIKE ? ORDER BY id DESC LIMIT 50').all(Number(s) || 0, `%${s}%`, `%${s}%`)
-    : db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT 50').all();
+    ? db.prepare(`SELECT * FROM users WHERE id=? OR username LIKE @q OR first_name LIKE @q OR last_name LIKE @q
+        OR (first_name || ' ' || IFNULL(last_name,'')) LIKE @q ORDER BY created_at DESC LIMIT 100`).all(Number(s) || 0, { q: `%${s}%` })
+    : db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT 100').all();
   res.json(rows.map((u) => ({ ...u, balance: toUsd(u.balance), total_earned: toUsd(u.total_earned),
     invited: inviteStats.get(u.id).c, invite_earned: toUsd(u.invite_earned) })));
 });
