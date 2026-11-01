@@ -318,7 +318,6 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 .blocked h2 { color: var(--ink); }
 
 .demo-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:90;background:#23252f;color:#ffe48a;font:600 11px Inter,sans-serif;padding:4px 10px;border-radius:0 0 10px 10px;white-space:nowrap}.demo-banner button{color:#fff;text-decoration:underline;font-size:11px;padding:0 0 0 4px}.topbar{padding-top:26px}</style>
-  
 </head>
 <body>
   <div class="demo-banner">DEMO · fake data, simulated ads · <button onclick="__demoAddFunds()">+$10 to test withdraw</button></div>
@@ -886,8 +885,11 @@ window.I18N = {
   }
 
   // ------------------------------------------------------------ Monetag
+  // The SDK tag is in index.html's <head>; this loader only runs if MONETAG_ZONE_ID in .env names a different zone.
+  const DEFAULT_ZONE = '11484941';
   let monetagReady = null;
   function loadMonetag(zone) {
+    if (typeof window[`show_${zone}`] === 'function') return Promise.resolve();
     if (monetagReady) return monetagReady;
     monetagReady = new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -902,7 +904,7 @@ window.I18N = {
   }
 
   async function showAd(token) {
-    const zone = S.config.monetagZoneId;
+    const zone = S.config.monetagZoneId || (S.config.devMode ? '' : DEFAULT_ZONE);
     if (zone) {
       await loadMonetag(zone);
       const show = window[`show_${zone}`];

@@ -8,6 +8,7 @@ const demoCss = `.demo-banner{position:fixed;top:0;left:50%;transform:translateX
 html = html
   .replace('<link rel="stylesheet" href="styles.css" />', () => `<style>${read('public/styles.css')}\n${demoCss}</style>`)
   .replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>', () => '')
+  .replace(/\s*<!-- Monetag SDK[^]*?<\/script>/, () => '')
   .replace('<script src="i18n.js"></script>', () => `<script>${read('demo/mock-api.js')}</script>\n<script>${read('public/i18n.js')}</script>`)
   .replace('<script src="app.js"></script>', () => `<script>${read('public/app.js')}</script>`)
   .replace('<div id="app" class="app">', () => `${banner}\n  <div id="app" class="app">`)

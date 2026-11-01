@@ -23,10 +23,12 @@ In DEV_MODE you can open the app in a normal browser, and ads are replaced by a 
 3. Set `SUPPORT_USERNAME` to your support account.
 
 ## 3. Connect Monetag
-1. In your Monetag dashboard, create a **Telegram Mini App** zone and copy the zone ID into `MONETAG_ZONE_ID`.
-   The app loads `https://libtl.com/sdk.js` with `data-zone` / `data-sdk="show_<zone>"` and calls
-   `show_<zone>({ ymid: <sessionToken> })` (rewarded interstitial). The user is credited only after that promise resolves.
-   **Check this against the SDK snippet in your Monetag dashboard**, and adjust `loadMonetag()` / `showAd()` in `public/app.js` if it differs.
+1. The Monetag SDK tag for zone **11484941** is already in the `<head>` of `public/index.html`:
+   ```html
+   <script src="//libtl.com/sdk.js" data-zone="11484941" data-sdk="show_11484941"></script>
+   ```
+   When a user taps **Watch Ad**, the app calls `show_11484941()` (Rewarded Interstitial). The reward is added only after that promise resolves, and the server checks it.
+   To use another zone, change `data-zone` and `data-sdk` in that tag and set `MONETAG_ZONE_ID` in `.env` to the same number.
 2. *(Recommended)* Set up a **postback** in Monetag so the server can confirm views itself:
    ```
    https://your-domain.com/api/monetag/postback?secret=YOUR_SECRET&ymid={ymid}&reward_event_type={reward_event_type}

@@ -156,8 +156,11 @@
   }
 
   // ------------------------------------------------------------ Monetag
+  // The SDK tag is in index.html's <head>; this loader only runs if MONETAG_ZONE_ID in .env names a different zone.
+  const DEFAULT_ZONE = '11484941';
   let monetagReady = null;
   function loadMonetag(zone) {
+    if (typeof window[`show_${zone}`] === 'function') return Promise.resolve();
     if (monetagReady) return monetagReady;
     monetagReady = new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -172,7 +175,7 @@
   }
 
   async function showAd(token) {
-    const zone = S.config.monetagZoneId;
+    const zone = S.config.monetagZoneId || (S.config.devMode ? '' : DEFAULT_ZONE);
     if (zone) {
       await loadMonetag(zone);
       const show = window[`show_${zone}`];
