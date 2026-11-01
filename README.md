@@ -38,12 +38,38 @@ In DEV_MODE you can open the app in a normal browser, and ads are replaced by a 
 > ⚠️ Reward users for **watching** ads only, never for **clicking** them. Paying for clicks breaks ad network rules and can get your Monetag account banned and your earnings withheld.
 
 ## 4. Deploy
-Any Node host with a persistent disk works (VPS, Railway, Render, Fly.io). Telegram requires **HTTPS**.
+
+### Option A: your own VPS with Coolify (recommended)
+The repo includes a `Dockerfile`, so Coolify builds and runs it as-is.
+
+1. In Coolify: **+ New → Application → GitHub (private repo via GitHub App, or public repo URL) → `NduatiRobert/payplusmini`**, branch `main`.
+2. **Build Pack:** `Dockerfile`. **Ports Exposes:** `3000`.
+3. **Domains:** e.g. `https://pay.yourdomain.com`. Point that domain's DNS **A record** to your VPS IP first. Coolify gets the HTTPS certificate automatically, and Telegram requires HTTPS.
+4. **Persistent Storage → + Add → Volume:** name `payplus-data`, destination path **`/data`**. Without it, all users and balances are lost on every redeploy.
+5. **Environment Variables** (see `.env.example`), at minimum:
+   ```
+   WEBAPP_URL=https://pay.yourdomain.com
+   DEV_MODE=false
+   BOT_TOKEN=...
+   BOT_USERNAME=Pay_Plus_Bot
+   APP_SHORT_NAME=app
+   SUPPORT_USERNAME=...
+   ADMIN_TOKEN=<long random string>
+   MONETAG_ZONE_ID=11484941
+   ```
+   `DB_PATH` and `PORT` are already set in the image (`/data/payplus.db`, `3000`).
+6. Click **Deploy**. The container has a health check at `/api/health`.
+7. In **@BotFather**, set your Mini App's URL to `https://pay.yourdomain.com`. Then open the bot, send `/start` and tap **Open PayPlus**.
+
+Back up the `payplus-data` volume regularly. Coolify can schedule this, or copy `/data/payplus.db` off the server.
+
+### Option B: any other Node host
+Needs Node 20.12+, HTTPS, and a persistent disk for `data/payplus.db`.
 ```bash
 npm install --omit=dev
 npm start
 ```
-Keep `data/payplus.db` on persistent storage and back it up. Set `DEV_MODE=false` in production.
+Set `DEV_MODE=false` in production. Static-only hosts like Netlify or GitHub Pages **won't work**: the app needs its Node server running.
 
 ## 5. Daily operation (admin panel `/admin`)
 - **Withdrawals**: send the money yourself (M-Pesa/airtime, PayPal, USDT), then click **Mark paid**. **Reject** refunds the user.

@@ -94,6 +94,8 @@ function state(userId) {
   };
 }
 
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
 app.post('/api/me', auth, (req, res) => res.json(state(req.user.id)));
 
 // ---------------------------------------------------------------- ads (Monetag)
