@@ -27,18 +27,13 @@ In DEV_MODE you can open the app in a normal browser, and ads are replaced by a 
    ```html
    <script src="//libtl.com/sdk.js" data-zone="11484941" data-sdk="show_11484941"></script>
    ```
-   The Ads screen has two cards, one per Monetag format:
-   - **Watch Ad** calls `show_11484941()` (**Rewarded Interstitial**).
-   - **Bonus Ad** calls `show_11484941('pop')` (**Rewarded Popup**). It opens the sponsor page, and the reward is added when the user comes back.
-
-   Each reward is added only after Monetag's promise resolves, and the server checks it. Each format has its own reward, daily limit and cooldown (see the table below). **Activate both formats** in your Monetag dashboard.
+   When a user taps **Watch Ad**, the app calls `show_11484941()` (Rewarded Interstitial). The reward is added only after that promise resolves, and the server checks it.
    To use another zone, change `data-zone` and `data-sdk` in that tag and set `MONETAG_ZONE_ID` in `.env` to the same number.
 2. *(Recommended)* Set up a **postback** in Monetag so the server can confirm views itself:
    ```
    https://your-domain.com/api/monetag/postback?secret=YOUR_SECRET&ymid={ymid}&reward_event_type={reward_event_type}
    ```
    Put the same secret in `MONETAG_POSTBACK_SECRET` and set `MONETAG_REQUIRE_POSTBACK=true`. Check the macro names in your Monetag dashboard.
-   The postback check applies to Watch Ad only. Bonus Ad uses Monetag's plain `show_11484941('pop')` call, which doesn't pass the session token.
 
 > ⚠️ Reward users for **watching** ads only, never for **clicking** them. Paying for clicks breaks ad network rules and can get your Monetag account banned and your earnings withheld.
 
@@ -84,14 +79,10 @@ Set `DEV_MODE=false` in production. Static-only hosts like Netlify or GitHub Pag
 ## Rewards & anti-cheat (all in `.env`)
 | Setting | Default | Meaning |
 |---|---|---|
-| `AD_REWARD` | 0.30 | USD per Watch Ad (Rewarded Interstitial) |
-| `AD_DAILY_LIMIT` | 15 | Watch Ads per user per day (UTC) |
+| `AD_REWARD` | 0.30 | USD per completed ad |
+| `AD_DAILY_LIMIT` | 15 | Ads per user per day (UTC) |
 | `AD_COOLDOWN_SECONDS` | 30 | Wait between ads |
 | `AD_MIN_SECONDS` | 10 | Ad must run at least this long |
-| `POP_AD_REWARD` | 0.20 | USD per Bonus Ad (Rewarded Popup) |
-| `POP_AD_DAILY_LIMIT` | 10 | Bonus Ads per user per day |
-| `POP_AD_COOLDOWN_SECONDS` | 30 | Wait between Bonus Ads |
-| `POP_AD_MIN_SECONDS` | 5 | Minimum time before a Bonus Ad can be credited |
 | `REFERRAL_REWARD` | 0.75 | Paid to the inviter… |
 | `REFERRAL_REQUIRED_ADS` | 3 | …after the friend watches this many ads |
 | `MIN_WITHDRAWAL` | 10 | Minimum payout |

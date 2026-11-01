@@ -56,24 +56,16 @@ function auth(req, res, next) {
 }
 
 // ---------------------------------------------------------------- state
-const adsToday = db.prepare("SELECT COUNT(*) c FROM ad_sessions WHERE user_id=? AND day=? AND format=? AND completed_at IS NOT NULL");
-const lastAd = db.prepare('SELECT MAX(completed_at) t FROM ad_sessions WHERE user_id=? AND format=?');
+const adsToday = db.prepare('SELECT COUNT(*) c FROM ad_sessions WHERE user_id=? AND day=? AND completed_at IS NOT NULL');
+const lastAd = db.prepare('SELECT MAX(completed_at) t FROM ad_sessions WHERE user_id=?');
 const inviteStats = db.prepare('SELECT COUNT(*) c FROM users WHERE referrer_id=?');
 
-function formatState(userId, format) {
-  const f = config.adFormats[format];
-  const last = lastAd.get(userId, format).t || 0;
-  return {
-    reward: f.reward, dailyLimit: f.limit, today: adsToday.get(userId, today(), format).c,
-    cooldownLeft: Math.max(0, Math.ceil((last + f.cooldown * 1000 - now()) / 1000)),
-  };
-}
-
 function adState(user) {
-  const formats = Object.fromEntries(Object.keys(config.adFormats).map((k) => [k, formatState(user.id, k)]));
+  const watchedToday = adsToday.get(user.id, today()).c;
+  const last = lastAd.get(user.id).t || 0;
+  const cooldownLeft = Math.max(0, Math.ceil((last + config.adCooldownSeconds * 1000 - now()) / 1000));
   return {
-    ...formats.interstitial, // top-level fields = Rewarded Interstitial (kept for compatibility)
-    formats,
+    reward: config.adReward, dailyLimit: config.adDailyLimit, today: watchedToday, cooldownLeft,
     watchedTotal: user.ads_watched, earnedTotal: toUsd(user.ads_earned),
   };
 }
@@ -107,17 +99,15 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.post('/api/me', auth, (req, res) => res.json(state(req.user.id)));
 
 // ---------------------------------------------------------------- ads (Monetag)
-const insertSession = db.prepare('INSERT INTO ad_sessions (token,user_id,day,created_at,format) VALUES (?,?,?,?,?)');
+const insertSession = db.prepare('INSERT INTO ad_sessions (token,user_id,day,created_at) VALUES (?,?,?,?)');
 const getSession = db.prepare('SELECT * FROM ad_sessions WHERE token=?');
 
 app.post('/api/ads/start', auth, (req, res) => {
-  const format = String(req.body.format || 'interstitial');
-  if (!config.adFormats[format]) throw new HttpError(400, 'Unknown ad format.');
-  const s = formatState(req.user.id, format);
-  if (s.today >= s.dailyLimit) throw new HttpError(429, 'Daily limit for this ad reached. Come back tomorrow!');
+  const s = adState(req.user);
+  if (s.today >= config.adDailyLimit) throw new HttpError(429, 'Daily ad limit reached. Come back tomorrow!');
   if (s.cooldownLeft > 0) throw new HttpError(429, `Please wait ${s.cooldownLeft}s before the next ad.`);
   const token = crypto.randomBytes(16).toString('hex');
-  insertSession.run(token, req.user.id, today(), now(), format);
+  insertSession.run(token, req.user.id, today(), now());
   res.json({ token });
 });
 
@@ -133,23 +123,21 @@ const completeAd = db.transaction((userId, token) => {
   const s = getSession.get(token);
   if (!s || s.user_id !== userId) throw new HttpError(400, 'Invalid ad session.');
   if (s.completed_at) throw new HttpError(409, 'This ad was already rewarded.');
-  const f = config.adFormats[s.format] || config.adFormats.interstitial;
-  if (now() - s.created_at < f.minSeconds * 1000) throw new HttpError(400, 'Please watch the full ad to earn.');
+  if (now() - s.created_at < config.adMinSeconds * 1000) throw new HttpError(400, 'Please watch the full ad to earn.');
   if (now() - s.created_at > 30 * 60 * 1000) throw new HttpError(400, 'Ad session expired. Try again.');
-  if (config.monetagRequirePostback && s.format === 'interstitial' && !s.postback_at) throw new HttpError(425, 'Verifying your ad view… try again in a few seconds.');
-  if (adsToday.get(userId, s.day, s.format).c >= f.limit) throw new HttpError(429, 'Daily ad limit reached.');
+  if (config.monetagRequirePostback && !s.postback_at) throw new HttpError(425, 'Verifying your ad view… try again in a few seconds.');
+  if (adsToday.get(userId, s.day).c >= config.adDailyLimit) throw new HttpError(429, 'Daily ad limit reached.');
 
-  const reward = toMicro(f.reward);
+  const reward = toMicro(config.adReward);
   db.prepare('UPDATE ad_sessions SET completed_at=? WHERE token=?').run(now(), token);
   db.prepare('UPDATE users SET ads_watched = ads_watched + 1, ads_earned = ads_earned + ? WHERE id=?').run(reward, userId);
   addBalance(userId, reward, 'ad', token);
   payReferrer(q.getUser.get(userId));
-  return f.reward;
 });
 
 app.post('/api/ads/complete', auth, (req, res) => {
-  const reward = completeAd(req.user.id, String(req.body.token || ''));
-  res.json({ ok: true, reward, ...state(req.user.id) });
+  completeAd(req.user.id, String(req.body.token || ''));
+  res.json({ ok: true, reward: config.adReward, ...state(req.user.id) });
 });
 
 /**

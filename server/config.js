@@ -33,10 +33,6 @@ const config = {
   adDailyLimit: num('AD_DAILY_LIMIT', 15),
   adCooldownSeconds: num('AD_COOLDOWN_SECONDS', 30),
   adMinSeconds: num('AD_MIN_SECONDS', 10),
-  popReward: num('POP_AD_REWARD', 0.2),
-  popDailyLimit: num('POP_AD_DAILY_LIMIT', 10),
-  popCooldownSeconds: num('POP_AD_COOLDOWN_SECONDS', 30),
-  popMinSeconds: num('POP_AD_MIN_SECONDS', 5),
   referralReward: num('REFERRAL_REWARD', 0.75),
   referralRequiredAds: num('REFERRAL_REQUIRED_ADS', 3),
   minWithdrawal: num('MIN_WITHDRAWAL', 10),
@@ -48,11 +44,5 @@ if (!config.devMode && !config.botToken) {
   process.exit(1);
 }
 if (config.devMode) console.warn('⚠️  DEV_MODE is ON — Telegram auth is bypassed. Never use in production.');
-
-// Monetag ad formats. `interstitial` = show_ZONE(), `pop` = show_ZONE('pop').
-config.adFormats = {
-  interstitial: { reward: config.adReward, limit: config.adDailyLimit, cooldown: config.adCooldownSeconds, minSeconds: config.adMinSeconds },
-  pop: { reward: config.popReward, limit: config.popDailyLimit, cooldown: config.popCooldownSeconds, minSeconds: config.popMinSeconds },
-};
 
 module.exports = config;
