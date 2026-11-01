@@ -68,6 +68,9 @@ async function handleUpdate(update) {
   const msg = update.message;
   if (!msg?.text?.startsWith('/start')) return;
   const payload = msg.text.split(' ')[1] || '';
+  if (payload && msg.from?.id) {
+    try { require('./db').savePendingReferral(msg.from.id, payload); } catch (e) { console.error('[bot] referral', e.message); }
+  }
   const name = msg.from?.first_name || 'there';
   const button = config.webappUrl
     ? { text: '💰 Open PayPlus', web_app: { url: `${config.webappUrl}/${payload ? `?ref=${encodeURIComponent(payload)}` : ''}` } }

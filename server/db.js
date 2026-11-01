@@ -84,6 +84,13 @@ CREATE TABLE IF NOT EXISTS withdrawals (
   processed_at  INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_wd_status ON withdrawals(status);
+
+-- Referral seen by the bot (/start <inviterId>) before the user opened the Mini App.
+CREATE TABLE IF NOT EXISTS pending_referrals (
+  user_id      INTEGER PRIMARY KEY,
+  referrer_id  INTEGER NOT NULL,
+  created_at   INTEGER NOT NULL
+);
 `);
 
 // Migration: older databases restricted task types to channel/bot/subscribe.
@@ -115,6 +122,36 @@ if (tasksSql.includes('CHECK (type IN')) {
   db.pragma('foreign_keys = ON');
   console.log('[db] tasks table migrated to support more task types');
 }
+/**
+ * Link a user to the friend who invited them. Safe to call repeatedly; returns true if a referrer was set.
+ * Only allowed while the user has no referrer yet, hasn't watched any ads, and joined in the last 48 hours.
+ */
+const REFERRAL_WINDOW_MS = 48 * 3600 * 1000;
+function attachReferrer(userId, raw) {
+  const refId = Number(String(raw ?? '').trim().replace(/^ref_?/i, ''));
+  if (!Number.isSafeInteger(refId) || refId <= 0 || refId === userId) return false;
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
+  const inviter = db.prepare('SELECT id, referrer_id FROM users WHERE id=?').get(refId);
+  if (!user || !inviter) return false;
+  if (user.referrer_id || user.ads_watched > 0 || Date.now() - user.created_at > REFERRAL_WINDOW_MS) return false;
+  if (inviter.referrer_id === userId) return false; // no A<->B loops
+  return db.prepare('UPDATE users SET referrer_id=? WHERE id=? AND referrer_id IS NULL').run(refId, userId).changes > 0;
+}
+
+/** Remember a referral the bot saw in /start, and apply it right away if the user already exists. */
+function savePendingReferral(userId, raw) {
+  const refId = Number(String(raw ?? '').trim().replace(/^ref_?/i, ''));
+  if (!Number.isSafeInteger(refId) || refId <= 0 || refId === userId) return;
+  db.prepare(`INSERT INTO pending_referrals (user_id, referrer_id, created_at) VALUES (?,?,?)
+              ON CONFLICT(user_id) DO NOTHING`).run(userId, refId, Date.now());
+  attachReferrer(userId, refId);
+}
+
+function takePendingReferral(userId) {
+  const row = db.prepare('SELECT referrer_id FROM pending_referrals WHERE user_id=?').get(userId);
+  return row ? row.referrer_id : null;
+}
+
 const toMicro = (usd) => Math.round(Number(usd) * 1_000_000);
 const toUsd = (micro) => Math.round(Number(micro || 0) / 10_000) / 100; // 2 decimals
 
@@ -127,4 +164,4 @@ function addBalance(userId, amountMicro, type, ref = null) {
   ledger.run(userId, amountMicro, type, ref, Date.now());
 }
 
-module.exports = { db, toMicro, toUsd, addBalance };
+module.exports = { db, toMicro, toUsd, addBalance, attachReferrer, savePendingReferral, takePendingReferral };

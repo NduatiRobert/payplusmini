@@ -106,6 +106,7 @@
     $('#scroll').scrollTo({ top: 0, behavior: 'smooth' });
     if (name === 'tasks') loadTasks();
     if (name === 'withdraw') loadWithdrawals();
+    if (name === 'invite') api('/me', {}).then((r) => { S = r; render(); }).catch(() => {});
   }
   $$('.nav-item').forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
 

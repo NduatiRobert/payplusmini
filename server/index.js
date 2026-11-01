@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const config = require('./config');
-const { db, toMicro, toUsd, addBalance } = require('./db');
+const { db, toMicro, toUsd, addBalance, attachReferrer, takePendingReferral } = require('./db');
 const tg = require('./telegram');
 
 const app = express();
@@ -18,16 +18,10 @@ const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).cat
 // ---------------------------------------------------------------- auth
 const q = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
-  insertUser: db.prepare(`INSERT INTO users (id,username,first_name,last_name,photo_url,language,referrer_id,created_at,last_seen)
-                          VALUES (@id,@username,@first_name,@last_name,@photo_url,@language,@referrer_id,@now,@now)`),
+  insertUser: db.prepare(`INSERT INTO users (id,username,first_name,last_name,photo_url,language,created_at,last_seen)
+                          VALUES (@id,@username,@first_name,@last_name,@photo_url,@language,@now,@now)`),
   touchUser: db.prepare('UPDATE users SET username=@username, first_name=@first_name, last_name=@last_name, photo_url=@photo_url, last_seen=@now WHERE id=@id'),
 };
-
-function parseReferrer(raw, selfId) {
-  const id = Number(String(raw || '').replace(/^ref_?/, ''));
-  if (!Number.isSafeInteger(id) || id <= 0 || id === selfId) return null;
-  return q.getUser.get(id) ? id : null;
-}
 
 function auth(req, res, next) {
   const initData = req.get('x-telegram-init-data') || '';
@@ -44,11 +38,13 @@ function auth(req, res, next) {
     photo_url: u.photo_url || null, language: (u.language_code || 'en').slice(0, 2), now: now(),
   };
   let user = q.getUser.get(u.id);
-  if (!user) {
-    row.referrer_id = parseReferrer(verified.startParam || req.get('x-ref'), u.id);
-    q.insertUser.run(row);
-  } else {
-    q.touchUser.run(row);
+  if (!user) q.insertUser.run(row);
+  else q.touchUser.run(row);
+  // Referral sources, most trusted first: signed start_param, the bot's /start record, the ?ref= from the bot's button.
+  if (!(user && user.referrer_id)) {
+    for (const ref of [verified.startParam, takePendingReferral(u.id), req.get('x-ref')]) {
+      if (ref && attachReferrer(u.id, ref)) break;
+    }
   }
   user = q.getUser.get(u.id);
   if (user.banned) return res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
@@ -329,7 +325,7 @@ admin.get('/users', (req, res) => {
     ? db.prepare('SELECT * FROM users WHERE id=? OR username LIKE ? OR first_name LIKE ? ORDER BY id DESC LIMIT 50').all(Number(s) || 0, `%${s}%`, `%${s}%`)
     : db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT 50').all();
   res.json(rows.map((u) => ({ ...u, balance: toUsd(u.balance), total_earned: toUsd(u.total_earned),
-    invited: inviteStats.get(u.id).c })));
+    invited: inviteStats.get(u.id).c, invite_earned: toUsd(u.invite_earned) })));
 });
 
 admin.post('/users/:id', (req, res) => {

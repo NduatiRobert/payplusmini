@@ -83,7 +83,7 @@
 
   <section class="section" id="s-users">
     <div class="row"><input id="userQ" placeholder="Search by ID, username or name" style="min-width:260px" /><button id="userSearch">Search</button></div>
-    <table><thead><tr><th>ID</th><th>Name</th><th>Balance</th><th>Earned</th><th>Ads</th><th>Invited</th><th>Joined</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
+    <table><thead><tr><th>ID</th><th>Name</th><th>Balance</th><th>Earned</th><th>Ads</th><th>Invited</th><th>Referred by</th><th>Joined</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
   </section>
 </main>
 
@@ -180,7 +180,7 @@ async function loadUsers() {
   const rows = await api('/users?q=' + encodeURIComponent($('#userQ').value));
   $('#userBody').innerHTML = rows.map((u) => `<tr>
     <td class="mono">${u.id}</td><td>${esc(u.first_name)} ${u.username ? '<div class="muted">@' + esc(u.username) + '</div>' : ''}${u.banned ? ' <b style="color:#b03a3a">BANNED</b>' : ''}</td>
-    <td>${money(u.balance)}</td><td>${money(u.total_earned)}</td><td>${u.ads_watched}</td><td>${u.invited}</td><td>${date(u.created_at)}</td>
+    <td>${money(u.balance)}</td><td>${money(u.total_earned)}</td><td>${u.ads_watched}</td><td>${u.invited}${u.invited ? `<div class="muted">earned ${money(u.invite_earned)}</div>` : ''}</td><td class="mono">${u.referrer_id || '—'}${u.referrer_id ? `<div class="muted">${u.referral_paid ? 'paid' : 'not paid yet'}</div>` : ''}</td><td>${date(u.created_at)}</td>
     <td><button class="small" data-adj="${u.id}">Adjust</button> <button class="small ${u.banned ? 'ok' : 'bad'}" data-ban="${u.id}" data-v="${u.banned ? 0 : 1}">${u.banned ? 'Unban' : 'Ban'}</button></td>
   </tr>`).join('');
 }
