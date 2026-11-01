@@ -370,6 +370,15 @@ app.use((err, req, res, _next) => {
 app.listen(config.port, async () => {
   console.log(`PayPlus running on http://localhost:${config.port}`);
   if (!config.botToken) return;
+  // Use the bot's real username from Telegram, so invite links can't break because of a typo in BOT_USERNAME.
+  try {
+    const me = await tg.botApi('getMe');
+    if (me.username && me.username.toLowerCase() !== config.botUsername.toLowerCase()) {
+      console.warn(`[bot] BOT_USERNAME is "${config.botUsername}" but the token belongs to @${me.username}; using @${me.username}.`);
+    }
+    if (me.username) config.botUsername = me.username;
+    console.log(`[bot] @${config.botUsername} · invite links: ${tg.appLink('<userId>')}`);
+  } catch (e) { console.error('[bot] getMe failed:', e.message); }
   if (config.botPolling) {
     tg.startPolling();
   } else if (config.webappUrl) {
