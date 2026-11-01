@@ -1,0 +1,16 @@
+{
+  "name": "payplus-miniapp",
+  "version": "1.0.0",
+  "description": "PayPlus - Telegram Mini App: earn by watching Monetag ads, completing tasks and inviting friends",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "DEV_MODE=true node --watch server/index.js"
+  },
+  "engines": { "node": ">=20.12" },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0"
+  }
+}

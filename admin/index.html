@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>PayPlus Admin</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f6f4ee; color: #222; }
+  header { background: #2a2216; color: #f4e6c0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+  header b { font-size: 20px; } header b span { color: #e0b04a; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tabs button, button { border: 1px solid #d6c79f; background: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font: inherit; }
+  .tabs button.active { background: #e0b04a; border-color: #b8892a; font-weight: 700; }
+  button.ok { background: #1f7a45; color: #fff; border-color: #1f7a45; }
+  button.bad { background: #b03a3a; color: #fff; border-color: #b03a3a; }
+  button.small { padding: 4px 9px; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #ece3c8; }
+  .card small { color: #888; text-transform: uppercase; font-size: 11px; letter-spacing: .8px; }
+  .card div { font-size: 24px; font-weight: 800; margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; font-size: 14px; }
+  th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
+  th { background: #faf6ea; font-size: 12px; text-transform: uppercase; color: #6b5420; }
+  input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font: inherit; }
+  form.inline { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #ece3c8; }
+  .section { display: none; } .section.active { display: block; }
+  .mono { font-family: ui-monospace, monospace; font-size: 12.5px; word-break: break-all; }
+  #login { max-width: 360px; margin: 80px auto; } #login input { width: 100%; margin: 10px 0; }
+  .muted { color: #888; font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header><b>Pay<span>Plu$</span> Admin</b><button id="logout" class="small" style="display:none">Log out</button></header>
+
+<div id="login" class="card">
+  <h3>Admin login</h3>
+  <input id="tokenInput" type="password" placeholder="ADMIN_TOKEN from your .env" />
+  <button class="ok" id="loginBtn">Log in</button>
+</div>
+
+<main id="panel" style="display:none">
+  <div class="tabs">
+    <button data-s="dashboard" class="active">Dashboard</button>
+    <button data-s="withdrawals">Withdrawals</button>
+    <button data-s="tasks">Tasks</button>
+    <button data-s="users">Users</button>
+  </div>
+
+  <section class="section active" id="s-dashboard"><div class="grid" id="stats"></div></section>
+
+  <section class="section" id="s-withdrawals">
+    <div class="row">
+      <select id="wdStatus"><option value="pending">Pending</option><option value="paid">Paid</option><option value="rejected">Rejected</option></select>
+      <span class="muted">Send the payment manually first, then mark it as Paid. Rejecting refunds the user's balance.</span>
+    </div>
+    <table><thead><tr><th>#</th><th>User</th><th>Amount</th><th>Method</th><th>Destination</th><th>Date</th><th></th></tr></thead><tbody id="wdBody"></tbody></table>
+  </section>
+
+  <section class="section" id="s-tasks">
+    <form class="inline" id="taskForm">
+      <select name="type"><option value="channel">Join Channel</option><option value="bot">Start Bot</option><option value="subscribe">Subscribe (YouTube etc.)</option></select>
+      <input name="title" placeholder="Title" required />
+      <input name="url" placeholder="https://t.me/yourchannel" required style="min-width:220px" />
+      <input name="chat_id" placeholder="@channel (for auto-check)" />
+      <input name="reward" type="number" step="0.01" value="0.10" style="width:90px" />
+      <button class="ok">Add task</button>
+    </form>
+    <p class="muted">For channel tasks, set <b>chat_id</b> (e.g. <code>@yourchannel</code>) and add your bot as an <b>admin</b> of that channel, so joins are verified automatically. Other tasks can be claimed a few seconds after the user taps Start.</p>
+    <table><thead><tr><th>#</th><th>Type</th><th>Title / URL</th><th>chat_id</th><th>Reward</th><th>Done by</th><th>Active</th><th></th></tr></thead><tbody id="taskBody"></tbody></table>
+  </section>
+
+  <section class="section" id="s-users">
+    <div class="row"><input id="userQ" placeholder="Search by ID, username or name" style="min-width:260px" /><button id="userSearch">Search</button></div>
+    <table><thead><tr><th>ID</th><th>Name</th><th>Balance</th><th>Earned</th><th>Ads</th><th>Invited</th><th>Joined</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
+  </section>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = (n) => '$' + Number(n || 0).toFixed(2);
+const date = (t) => t ? new Date(t).toLocaleString() : '';
+let token = localStorage.getItem('pp_admin') || '';
+
+async function api(path, method = 'GET', body) {
+  const r = await fetch('/api/admin' + path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: body ? JSON.stringify(body) : undefined });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401) { logout(); throw new Error(d.error); }
+  if (!r.ok) { alert(d.error || 'Error'); throw new Error(d.error); }
+  return d;
+}
+function logout() { localStorage.removeItem('pp_admin'); token = ''; $('#panel').style.display = 'none'; $('#login').style.display = ''; $('#logout').style.display = 'none'; }
+async function login() {
+  token = $('#tokenInput').value.trim() || token;
+  try { await api('/stats'); } catch { return; }
+  localStorage.setItem('pp_admin', token);
+  $('#login').style.display = 'none'; $('#panel').style.display = ''; $('#logout').style.display = '';
+  loadStats();
+}
+$('#loginBtn').onclick = login;
+$('#logout').onclick = logout;
+
+document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b));
+  document.querySelectorAll('.section').forEach((s) => s.classList.toggle('active', s.id === 's-' + b.dataset.s));
+  ({ dashboard: loadStats, withdrawals: loadWd, tasks: loadTasks, users: loadUsers })[b.dataset.s]();
+});
+
+async function loadStats() {
+  const s = await api('/stats');
+  const items = [['Users', s.users], ['Active (24h)', s.activeToday], ['Ads today', s.adsToday], ['Ads total', s.adsTotal],
+    ['User balances', money(s.totalBalances)], ['Total paid out', money(s.totalPaid)], ['Pending withdrawals', s.pendingWithdrawals], ['Pending amount', money(s.pendingAmount)]];
+  $('#stats').innerHTML = items.map(([k, v]) => `<div class="card"><small>${k}</small><div>${v}</div></div>`).join('');
+}
+
+$('#wdStatus').onchange = loadWd;
+async function loadWd() {
+  const status = $('#wdStatus').value;
+  const rows = await api('/withdrawals?status=' + status);
+  $('#wdBody').innerHTML = rows.map((w) => `<tr>
+    <td>${w.id}</td>
+    <td>${esc(w.first_name)} ${w.username ? '@' + esc(w.username) : ''}<div class="muted">ID ${w.user_id} · ${w.ads_watched} ads · earned ${money(w.total_earned)}</div></td>
+    <td><b>${money(w.amount)}</b></td><td>${esc(w.method)}</td><td class="mono">${esc(w.destination)}</td>
+    <td>${date(w.created_at)}${w.admin_note ? `<div class="muted">${esc(w.admin_note)}</div>` : ''}</td>
+    <td>${status === 'pending' ? `<button class="ok small" data-wd="${w.id}" data-st="paid">Mark paid</button> <button class="bad small" data-wd="${w.id}" data-st="rejected">Reject</button>` : ''}</td>
+  </tr>`).join('') || '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
+}
+$('#wdBody').onclick = async (e) => {
+  const b = e.target.closest('[data-wd]'); if (!b) return;
+  const note = prompt(b.dataset.st === 'paid' ? 'Optional note (e.g. transaction ID):' : 'Reason for rejection (shown to user):');
+  if (note === null) return;
+  await api('/withdrawals/' + b.dataset.wd, 'POST', { status: b.dataset.st, note });
+  loadWd();
+};
+
+$('#taskForm').onsubmit = async (e) => {
+  e.preventDefault();
+  await api('/tasks', 'POST', Object.fromEntries(new FormData(e.target)));
+  e.target.reset(); loadTasks();
+};
+async function loadTasks() {
+  const rows = await api('/tasks');
+  $('#taskBody').innerHTML = rows.map((t) => `<tr>
+    <td>${t.id}</td><td>${t.type}</td><td>${esc(t.title)}<div class="mono muted">${esc(t.url)}</div></td>
+    <td class="mono">${esc(t.chat_id || '')}</td><td>${money(t.reward)}</td><td>${t.completions}</td>
+    <td><input type="checkbox" data-toggle="${t.id}" ${t.active ? 'checked' : ''}></td>
+    <td><button class="small" data-edit="${t.id}">Edit</button> <button class="bad small" data-del="${t.id}">Delete</button></td>
+  </tr>`).join('');
+  $('#taskBody').dataset.rows = JSON.stringify(rows);
+}
+$('#taskBody').onclick = async (e) => {
+  const tg = e.target.closest('[data-toggle]'), del = e.target.closest('[data-del]'), ed = e.target.closest('[data-edit]');
+  if (tg) await api('/tasks/' + tg.dataset.toggle, 'PATCH', { active: tg.checked });
+  if (del && confirm('Delete this task?')) { await api('/tasks/' + del.dataset.del, 'DELETE'); loadTasks(); }
+  if (ed) {
+    const t = JSON.parse($('#taskBody').dataset.rows).find((x) => x.id == ed.dataset.edit);
+    const title = prompt('Title', t.title); if (title === null) return;
+    const url = prompt('URL', t.url); if (url === null) return;
+    const chat_id = prompt('chat_id (leave empty for none)', t.chat_id || ''); if (chat_id === null) return;
+    const reward = prompt('Reward (USD)', t.reward); if (reward === null) return;
+    await api('/tasks/' + t.id, 'PATCH', { title, url, chat_id, reward: Number(reward) }); loadTasks();
+  }
+};
+
+$('#userSearch').onclick = loadUsers;
+async function loadUsers() {
+  const rows = await api('/users?q=' + encodeURIComponent($('#userQ').value));
+  $('#userBody').innerHTML = rows.map((u) => `<tr>
+    <td class="mono">${u.id}</td><td>${esc(u.first_name)} ${u.username ? '<div class="muted">@' + esc(u.username) + '</div>' : ''}${u.banned ? ' <b style="color:#b03a3a">BANNED</b>' : ''}</td>
+    <td>${money(u.balance)}</td><td>${money(u.total_earned)}</td><td>${u.ads_watched}</td><td>${u.invited}</td><td>${date(u.created_at)}</td>
+    <td><button class="small" data-adj="${u.id}">Adjust</button> <button class="small ${u.banned ? 'ok' : 'bad'}" data-ban="${u.id}" data-v="${u.banned ? 0 : 1}">${u.banned ? 'Unban' : 'Ban'}</button></td>
+  </tr>`).join('');
+}
+$('#userBody').onclick = async (e) => {
+  const a = e.target.closest('[data-adj]'), b = e.target.closest('[data-ban]');
+  if (a) { const v = prompt('Amount to add (negative to subtract), USD:'); if (!v) return; await api('/users/' + a.dataset.adj, 'POST', { adjust: Number(v), note: 'manual' }); loadUsers(); }
+  if (b && confirm(b.dataset.v === '1' ? 'Ban this user?' : 'Unban this user?')) { await api('/users/' + b.dataset.ban, 'POST', { banned: b.dataset.v === '1' }); loadUsers(); }
+};
+
+if (token) login();
+</script>
+</body>
+</html>

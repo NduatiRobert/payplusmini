@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>PayPlus - Earning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- Header -->
+    <header class="topbar">
+      <div class="logo">Pay<span>Plu$</span></div>
+      <div class="top-actions">
+        <button class="pill-btn" id="supportBtn">
+          <svg class="ic"><use href="#i-chat"/></svg>
+          <span><small data-i18n="customer">Customer</small><b data-i18n="support">Support</b></span>
+        </button>
+        <button class="pill-btn" id="langBtn">
+          <svg class="ic"><use href="#i-globe"/></svg>
+          <span><small data-i18n="language">Language</small><b id="langName">English</b></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="scroll" id="scroll">
+      <!-- Balance card -->
+      <section class="balance-card">
+        <div class="balance-top">
+          <div>
+            <div class="eyebrow" data-i18n="totalBalance">Total Balance</div>
+            <div class="balance-amount" id="balance">$0.00</div>
+            <div class="muted-sm" data-i18n="availableToWithdraw">Available to withdraw</div>
+          </div>
+          <div class="profile">
+            <div class="avatar" id="avatar"></div>
+            <div>
+              <div class="profile-name" id="userName">—</div>
+              <div class="profile-id" id="userId">ID: —</div>
+            </div>
+          </div>
+        </div>
+        <div class="balance-chips">
+          <span><svg class="ic"><use href="#i-play-circle"/></svg><i data-i18n="watchAds">Watch Ads</i></span>
+          <span><svg class="ic"><use href="#i-check-square"/></svg><i data-i18n="completeTasks">Complete Tasks</i></span>
+          <span><svg class="ic"><use href="#i-users"/></svg><i data-i18n="inviteFriends">Invite Friends</i></span>
+        </div>
+      </section>
+
+      <!-- ADS -->
+      <section class="panel tab-panel active" data-tab="ads">
+        <h2 data-i18n="watchAdsEarn">Watch Ads &amp; Earn</h2>
+        <p class="sub"><span data-i18n="watchAdsSub">Complete and watch a short video ads and earn</span> <b id="adRewardText">$0.00</b></p>
+
+        <button class="watch-card" id="watchBtn">
+          <div class="watch-row">
+            <div class="play"><svg><use href="#i-play"/></svg></div>
+            <div class="watch-text">
+              <div class="watch-title" data-i18n="watchAd">Watch Ad</div>
+              <div class="watch-sub" data-i18n="watchAdSub">Complete video to earn instantly</div>
+            </div>
+            <div class="reward-badge" id="adRewardBadge">+$0.00</div>
+          </div>
+          <div class="watch-progress">
+            <div class="bar"><div class="fill" id="adProgress"></div></div>
+            <span id="adCount">0 / 0</span><span data-i18n="today">today</span>
+          </div>
+        </button>
+
+        <div class="status" id="adStatus">
+          <svg class="ic"><use href="#i-info"/></svg><span data-i18n="readyToEarn">Ready to earn</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat gold">
+            <div class="stat-label" data-i18n="totalWatched">Total Watched</div>
+            <div class="stat-value"><span id="adsWatched">0</span> <small data-i18n="ads">ads</small></div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" data-i18n="totalEarned">Total Earned</div>
+            <div class="stat-value" id="adsEarned">$0.00</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TASKS -->
+      <section class="panel tab-panel" data-tab="tasks">
+        <h3 class="panel-title"><svg class="ic gold"><use href="#i-check-square"/></svg><span data-i18n="tasksTitle">Complete Tasks &amp; Earn Rewards</span></h3>
+        <div id="taskList" class="task-list"><div class="empty" data-i18n="loading">Loading…</div></div>
+      </section>
+
+      <!-- INVITE -->
+      <section class="panel tab-panel" data-tab="invite">
+        <div class="inner-card">
+          <div class="invite-head">
+            <div class="icon-box yellow"><svg class="ic"><use href="#i-users"/></svg></div>
+            <div>
+              <div class="card-title" data-i18n="inviteEarn">Invite &amp; Earn</div>
+              <div class="card-strong"><span data-i18n="earn">Earn</span> <span id="refReward">$0.00</span> <span data-i18n="forEachInvite">for each invite</span></div>
+              <div class="card-sub" data-i18n="inviteSub">Copy and share your invite link with friends to earn more.</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="label-strong" data-i18n="yourInviteLink">Your Invite Link</div>
+          <div class="link-box">
+            <svg class="ic grey"><use href="#i-link"/></svg>
+            <a id="inviteLink" href="#" target="_blank">—</a>
+            <button class="dark-btn" id="copyBtn"><svg class="ic"><use href="#i-copy"/></svg><span data-i18n="copy">Copy</span></button>
+          </div>
+          <button class="outline-btn" id="shareBtn"><svg class="ic"><use href="#i-send"/></svg><span data-i18n="shareWithFriends">Share with Friends</span></button>
+          <p class="hint" id="refHint"></p>
+        </div>
+        <div class="stats">
+          <div class="stat gold center">
+            <div class="stat-label" data-i18n="friendsInvited">Friends Invited</div>
+            <div class="stat-value"><span id="invitedCount">0</span> <svg class="ic"><use href="#i-users"/></svg></div>
+          </div>
+          <div class="stat center">
+            <div class="stat-label" data-i18n="earnedFromInvites">Earned From Invites</div>
+            <div class="stat-value"><span id="inviteEarned">$0.00</span> <small>$</small></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WITHDRAW -->
+      <section class="panel tab-panel" data-tab="withdraw">
+        <div class="inner-card">
+          <h3 class="panel-title"><svg class="ic gold"><use href="#i-wallet"/></svg><span data-i18n="paymentMethod">Payment Method</span></h3>
+          <div class="methods">
+            <button class="method" data-method="usdt_trc20">
+              <div class="m-icon usdt"><svg><use href="#i-tether"/></svg></div><span>USDT TRC20</span>
+            </button>
+            <button class="method" data-method="paypal">
+              <div class="m-icon paypal"><svg><use href="#i-paypal"/></svg></div><span>PayPal</span>
+            </button>
+            <button class="method active" data-method="mobile_topup">
+              <div class="m-icon topup"><svg><use href="#i-phone"/></svg></div><span data-i18n="mobileTopup">Mobile Top-Up</span>
+            </button>
+          </div>
+          <div class="divider"></div>
+          <form id="withdrawForm" novalidate>
+            <label class="field-label" data-i18n="amount">Amount</label>
+            <input class="input" id="wdAmount" type="number" inputmode="decimal" step="0.01" min="0" />
+            <div class="field-hint"><span data-i18n="availableBalance">Available balance</span>: <b id="wdAvail">$0.00</b> · <span data-i18n="min">Min</span> <span id="wdMin">$0.00</span></div>
+
+            <label class="field-label" id="destLabel">Phone Number</label>
+            <input class="input" id="wdDest" autocomplete="off" />
+            <div class="field-hint" id="destHint"></div>
+
+            <button class="submit-btn" type="submit" id="wdSubmit"><svg class="ic"><use href="#i-send"/></svg><span data-i18n="submitWithdrawal">Submit Withdrawal Request</span></button>
+          </form>
+        </div>
+        <h3 class="history-title" data-i18n="recentWithdrawals">Recent Withdrawals</h3>
+        <div id="wdHistory" class="history"></div>
+      </section>
+    </main>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="ads"><span class="nav-ic"><svg class="ic"><use href="#i-play-circle"/></svg></span><span data-i18n="navAds">Ads</span></button>
+      <button class="nav-item" data-tab="tasks"><span class="nav-ic"><svg class="ic"><use href="#i-check-square"/></svg></span><span data-i18n="navTasks">Tasks</span></button>
+      <button class="nav-item" data-tab="invite"><span class="nav-ic"><svg class="ic"><use href="#i-users"/></svg></span><span data-i18n="navInvite">Invite</span></button>
+      <button class="nav-item" data-tab="withdraw"><span class="nav-ic"><svg class="ic"><use href="#i-dollar"/></svg></span><span data-i18n="navWithdraw">Withdraw</span></button>
+    </nav>
+  </div>
+
+  <!-- Language sheet -->
+  <div class="sheet-backdrop" id="langSheet">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h3 data-i18n="chooseLanguage">Choose language</h3>
+      <div id="langOptions"></div>
+    </div>
+  </div>
+
+  <!-- Simulated ad (DEV_MODE only, when no Monetag zone is configured) -->
+  <div class="fake-ad" id="fakeAd">
+    <div class="fake-ad-box">
+      <div class="fake-ad-tag">TEST AD</div>
+      <p>This is a simulated ad (DEV_MODE). Configure <code>MONETAG_ZONE_ID</code> to show real Monetag ads.</p>
+      <div class="fake-ad-timer" id="fakeAdTimer">10</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="loader" id="loader"><div class="spinner"></div></div>
+
+  <!-- Icons -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+      <symbol id="i-play-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+      <symbol id="i-check-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+      <symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+      <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+      <symbol id="i-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13"/></symbol>
+      <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M12 8V4M8 4h8"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></symbol>
+      <symbol id="i-youtube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2M9.5 11l2 2 3-4"/></symbol>
+      <symbol id="i-tether" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3.4h-5.2v2.2c3.6.2 6.2.9 6.2 1.8s-2.6 1.6-6.2 1.8V20h-3.6v-6.8C6.6 13 4 12.3 4 11.4s2.6-1.6 6.2-1.8V7.4H5V4zm5.2 7v1.2c.6 0 1.2.1 1.8.1s1.2 0 1.8-.1V11c-.6 0-1.2-.1-1.8-.1s-1.2 0-1.8.1zm-1.4-.1c-1.5.2-2.6.4-2.6.6 0 .3 1.1.5 2.6.6v-1.2zm6.4 0v1.2c1.5-.2 2.6-.4 2.6-.6s-1.1-.5-2.6-.6z"/></symbol>
+      <symbol id="i-paypal" viewBox="0 0 24 24"><path fill="#1e3a8a" d="M8.3 21H4.8l2.7-17h6.2c3.3 0 5.3 1.7 4.7 4.9-.6 3.6-3 5.3-6.4 5.3H9.6L8.3 21z"/><path fill="#3b82f6" d="M10.6 21H7.9l.4-2.5 1-6.1h2.3c3.9 0 6.4-2 7.1-5.6 1.4 1 1.9 2.6 1.5 4.6-.6 3.5-3 5-6.3 5H12l-1.4 4.6z"/></symbol>
+    </defs>
+  </svg>
+
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
