@@ -21,7 +21,8 @@ const config = {
   botUsername: env('BOT_USERNAME', 'Pay_Plus_Bot').replace(/^@/, ''),
   appShortName: env('APP_SHORT_NAME').replace(/^\/+|\/+$/g, ''),
   supportUsername: env('SUPPORT_USERNAME').replace(/^@/, ''),
-  botPolling: bool('BOT_POLLING', true),
+  // Webhook (Telegram pushes updates to WEBAPP_URL) is used whenever WEBAPP_URL is set, unless BOT_POLLING=true.
+  botPolling: process.env.BOT_POLLING ? bool('BOT_POLLING') : !env('WEBAPP_URL'),
 
   adminToken: env('ADMIN_TOKEN'),
 

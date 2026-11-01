@@ -95,7 +95,10 @@ async function startPolling() {
         handleUpdate(u).catch((e) => console.error('[bot]', e.message));
       }
     } catch (e) {
-      console.error('[bot] polling error:', e.message);
+      if (/Conflict/.test(e.message)) {
+        console.error('[bot] ANOTHER COPY OF THIS BOT IS RUNNING (getUpdates conflict). It can steal /start messages and referrals. '
+          + 'Stop the other copy, or set BOT_POLLING=false to use webhook mode.');
+      } else console.error('[bot] polling error:', e.message);
       await new Promise((r) => setTimeout(r, 5000));
     }
   }

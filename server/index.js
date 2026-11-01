@@ -39,8 +39,10 @@ function auth(req, res, next) {
     photo_url: u.photo_url || null, language: (u.language_code || 'en').slice(0, 2), now: now(),
   };
   let user = q.getUser.get(u.id);
-  if (!user) q.insertUser.run(row);
-  else q.touchUser.run(row);
+  if (!user) {
+    q.insertUser.run(row);
+    console.log(`[user] new user ${u.id} (${row.first_name}) · startapp=${verified.startParam || '-'} · bot /start=${takePendingReferral(u.id) || '-'} · ?ref=${req.get('x-ref') || '-'}`);
+  } else q.touchUser.run(row);
   // Referral sources, most trusted first: signed start_param, the bot's /start record, the ?ref= from the bot's button.
   // Applied in POST /api/me (once per app open), not on every request.
   req.refSources = [['startapp link', verified.startParam], ['bot /start', takePendingReferral(u.id)], ['?ref button', req.get('x-ref')]];
@@ -384,12 +386,21 @@ app.listen(config.port, async () => {
     console.log(`[bot] @${config.botUsername} · invite links: ${tg.appLink('<userId>')}`);
   } catch (e) { console.error('[bot] getMe failed:', e.message); }
   if (config.botPolling) {
+    console.log('[bot] mode: long polling (BOT_POLLING=true)');
     tg.startPolling();
   } else if (config.webappUrl) {
+    const url = `${config.webappUrl}/api/bot/webhook`;
     try {
-      await tg.botApi('setWebhook', { url: `${config.webappUrl}/api/bot/webhook`, secret_token: webhookSecret, allowed_updates: ['message'] });
-      console.log('[bot] webhook set');
+      await tg.botApi('setWebhook', { url, secret_token: webhookSecret, allowed_updates: ['message'] });
+      console.log(`[bot] mode: webhook -> ${url}`);
+      // Report delivery problems (e.g. a firewall/Cloudflare rule blocking Telegram) a minute later.
+      setTimeout(() => tg.botApi('getWebhookInfo').then((i) => {
+        if (i.last_error_message) console.error(`[bot] webhook delivery error: ${i.last_error_message} (pending: ${i.pending_update_count})`);
+        else console.log(`[bot] webhook OK (pending: ${i.pending_update_count})`);
+      }).catch(() => {}), 60000);
     } catch (e) { console.error('[bot] setWebhook failed:', e.message); }
+  } else {
+    console.error('[bot] no WEBAPP_URL and BOT_POLLING=false: the bot will not receive /start messages');
   }
   if (config.webappUrl) {
     tg.botApi('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Earn', web_app: { url: config.webappUrl } } })
