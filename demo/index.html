@@ -131,6 +131,10 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 }
 .watch-card:active { transform: scale(.985); }
 .watch-card:disabled { opacity: .65; cursor: not-allowed; }
+.watch-card + .watch-card { margin-top: 12px; }
+.watch-card.pop { background: linear-gradient(160deg, #fffdf6 0%, #f7edd2 55%, #ecdcb0 100%); }
+.play.gold { background: radial-gradient(circle at 35% 30%, #f3d27a, #b8862a 70%); color: #3b2f12; }
+.play.gold svg { width: 24px; height: 24px; margin-left: 0; }
 .watch-row { display: flex; align-items: center; gap: 14px; }
 .play {
   width: 52px; height: 52px; border-radius: 50%; flex: none; display: grid; place-items: center;
@@ -366,18 +370,33 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
         <h2 data-i18n="watchAdsEarn">Watch Ads &amp; Earn</h2>
         <p class="sub"><span data-i18n="watchAdsSub">Complete and watch a short video ads and earn</span> <b id="adRewardText">$0.00</b></p>
 
-        <button class="watch-card" id="watchBtn">
+        <button class="watch-card" data-format="interstitial">
           <div class="watch-row">
             <div class="play"><svg><use href="#i-play"/></svg></div>
             <div class="watch-text">
               <div class="watch-title" data-i18n="watchAd">Watch Ad</div>
               <div class="watch-sub" data-i18n="watchAdSub">Complete video to earn instantly</div>
             </div>
-            <div class="reward-badge" id="adRewardBadge">+$0.00</div>
+            <div class="reward-badge js-badge">+$0.00</div>
           </div>
           <div class="watch-progress">
-            <div class="bar"><div class="fill" id="adProgress"></div></div>
-            <span id="adCount">0 / 0</span><span data-i18n="today">today</span>
+            <div class="bar"><div class="fill js-fill"></div></div>
+            <span class="js-count">0 / 0 today</span>
+          </div>
+        </button>
+
+        <button class="watch-card pop" data-format="pop">
+          <div class="watch-row">
+            <div class="play gold"><svg><use href="#i-gift"/></svg></div>
+            <div class="watch-text">
+              <div class="watch-title" data-i18n="bonusAd">Bonus Ad</div>
+              <div class="watch-sub" data-i18n="bonusAdSub">Open the sponsor page, then come back to earn</div>
+            </div>
+            <div class="reward-badge js-badge">+$0.00</div>
+          </div>
+          <div class="watch-progress">
+            <div class="bar"><div class="fill js-fill"></div></div>
+            <span class="js-count">0 / 0 today</span>
           </div>
         </button>
 
@@ -518,6 +537,7 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
       <symbol id="i-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13"/></symbol>
       <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M12 8V4M8 4h8"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></symbol>
       <symbol id="i-youtube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/></symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
       <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2M9.5 11l2 2 3-4"/></symbol>
       <symbol id="i-tether" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3.4h-5.2v2.2c3.6.2 6.2.9 6.2 1.8s-2.6 1.6-6.2 1.8V20h-3.6v-6.8C6.6 13 4 12.3 4 11.4s2.6-1.6 6.2-1.8V7.4H5V4zm5.2 7v1.2c.6 0 1.2.1 1.8.1s1.2 0 1.8-.1V11c-.6 0-1.2-.1-1.8-.1s-1.2 0-1.8.1zm-1.4-.1c-1.5.2-2.6.4-2.6.6 0 .3 1.1.5 2.6.6v-1.2zm6.4 0v1.2c1.5-.2 2.6-.4 2.6-.6s-1.1-.5-2.6-.6z"/></symbol>
@@ -529,7 +549,8 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
 (() => {
   const DAY = new Date().toISOString().slice(0, 10);
   const S = {
-    balance: 2.30, totalEarned: 2.90, adsWatched: 2, adsEarned: 0.60, adsToday: 0, lastAd: 0,
+    balance: 2.30, totalEarned: 2.90, adsWatched: 2, adsEarned: 0.60,
+    fmt: { interstitial: { today: 0, last: 0 }, pop: { today: 0, last: 0 } },
     invited: 3, inviteEarned: 2.25, sessions: {}, withdrawals: [],
     tasks: [
       ...['PayPlus News', 'PayPlus Community', 'Crypto Daily', 'Earn Tips KE'].map((n, i) => ({ id: i + 1, type: 'channel', title: `Join ${n}`, url: 'https://t.me/telegram', reward: 0.10, status: i < 3 ? 'done' : 'new' })),
@@ -537,7 +558,7 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
       { id: 30, type: 'subscribe', title: 'Subscribe on YouTube', url: 'https://youtube.com', reward: 0.10, status: 'new' },
     ],
   };
-  const CFG = { reward: 0.30, limit: 15, cooldown: 5, minWd: 10 };
+  const CFG = { minWd: 10, formats: { interstitial: { reward: 0.30, limit: 15, cooldown: 5 }, pop: { reward: 0.20, limit: 10, cooldown: 5 } } };
   const started = {};
   const r2 = (n) => Math.round(n * 100) / 100;
   const err = (status, error) => ({ status, body: { error } });
@@ -546,9 +567,12 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
   const state = () => ({
     user: { id: 1901986305, firstName: 'Yoel', username: 'yoel', photoUrl: null },
     balance: r2(S.balance), totalEarned: r2(S.totalEarned),
-    ads: { reward: CFG.reward, dailyLimit: CFG.limit, today: S.adsToday,
-      cooldownLeft: Math.max(0, Math.ceil((S.lastAd + CFG.cooldown * 1000 - Date.now()) / 1000)),
-      watchedTotal: S.adsWatched, earnedTotal: r2(S.adsEarned) },
+    ads: (() => {
+      const formats = Object.fromEntries(Object.entries(CFG.formats).map(([k, f]) => [k, {
+        reward: f.reward, dailyLimit: f.limit, today: S.fmt[k].today,
+        cooldownLeft: Math.max(0, Math.ceil((S.fmt[k].last + f.cooldown * 1000 - Date.now()) / 1000)) }]));
+      return { ...formats.interstitial, formats, watchedTotal: S.adsWatched, earnedTotal: r2(S.adsEarned) };
+    })(),
     invite: { link: 'https://t.me/Pay_Plus_Bot/app?startapp=1901986305', reward: 0.75, requiredAds: 3, invited: S.invited, earned: S.inviteEarned },
     config: { monetagZoneId: '', supportUsername: '', botUsername: 'Pay_Plus_Bot', minWithdrawal: CFG.minWd, devMode: true },
   });
@@ -562,19 +586,23 @@ button { font: inherit; cursor: pointer; border: 0; background: none; color: inh
   function route(method, path, body) {
     if (path === '/me') return ok(state());
     if (path === '/ads/start') {
-      const s = state().ads;
-      if (s.today >= CFG.limit) return err(429, 'Daily ad limit reached. Come back tomorrow!');
+      const fmt = body.format || 'interstitial';
+      const s = state().ads.formats[fmt];
+      if (!s) return err(400, 'Unknown ad format.');
+      if (s.today >= s.dailyLimit) return err(429, 'Daily limit for this ad reached. Come back tomorrow!');
       if (s.cooldownLeft > 0) return err(429, `Please wait ${s.cooldownLeft}s before the next ad.`);
       const token = Math.random().toString(36).slice(2);
-      S.sessions[token] = Date.now();
+      S.sessions[token] = fmt;
       return ok({ token });
     }
     if (path === '/ads/complete') {
-      if (!S.sessions[body.token]) return err(409, 'This ad was already rewarded.');
+      const fmt = S.sessions[body.token];
+      if (!fmt) return err(409, 'This ad was already rewarded.');
       delete S.sessions[body.token];
-      S.balance += CFG.reward; S.totalEarned += CFG.reward; S.adsEarned += CFG.reward;
-      S.adsWatched++; S.adsToday++; S.lastAd = Date.now();
-      return ok({ ok: true, reward: CFG.reward, ...state() });
+      const reward = CFG.formats[fmt].reward;
+      S.balance += reward; S.totalEarned += reward; S.adsEarned += reward;
+      S.adsWatched++; S.fmt[fmt].today++; S.fmt[fmt].last = Date.now();
+      return ok({ ok: true, reward, ...state() });
     }
     if (path === '/tasks') return ok({ tasks: S.tasks.map((t) => ({ ...t })), minSeconds: 3 });
     let m = path.match(/^\/tasks\/(\d+)\/(start|claim)$/);
@@ -629,7 +657,7 @@ window.I18N = {
     totalBalance: 'Total Balance', availableToWithdraw: 'Available to withdraw',
     watchAds: 'Watch Ads', completeTasks: 'Complete Tasks', inviteFriends: 'Invite Friends',
     watchAdsEarn: 'Watch Ads & Earn', watchAdsSub: 'Complete and watch a short video ads and earn',
-    watchAd: 'Watch Ad', watchAdSub: 'Complete video to earn instantly', today: 'today',
+    watchAd: 'Watch Ad', watchAdSub: 'Complete video to earn instantly', bonusAd: 'Bonus Ad', bonusAdSub: 'Open the sponsor page, then come back to earn', limitShort: 'Limit reached', today: 'today',
     readyToEarn: 'Ready to earn', loadingAd: 'Loading ad…', verifying: 'Verifying your view…',
     waitSeconds: 'Next ad available in {s}s', dailyLimit: 'Daily limit reached. Come back tomorrow!',
     adNotAvailable: 'No ad available right now. Please try again in a moment.',
@@ -663,7 +691,7 @@ window.I18N = {
     totalBalance: 'Salio Lote', availableToWithdraw: 'Inapatikana kutoa',
     watchAds: 'Tazama Matangazo', completeTasks: 'Kamilisha Kazi', inviteFriends: 'Alika Marafiki',
     watchAdsEarn: 'Tazama Matangazo & Upate Pesa', watchAdsSub: 'Tazama video fupi ya tangazo hadi mwisho upate',
-    watchAd: 'Tazama Tangazo', watchAdSub: 'Maliza video upate pesa papo hapo', today: 'leo',
+    watchAd: 'Tazama Tangazo', watchAdSub: 'Maliza video upate pesa papo hapo', bonusAd: 'Tangazo la Ziada', bonusAdSub: 'Fungua ukurasa wa mdhamini, kisha urudi upate pesa', limitShort: 'Kikomo kimefikiwa', today: 'leo',
     readyToEarn: 'Tayari kupata pesa', loadingAd: 'Tangazo linapakia…', verifying: 'Tunathibitisha…',
     waitSeconds: 'Tangazo lijalo baada ya sekunde {s}', dailyLimit: 'Umefikia kikomo cha leo. Rudi kesho!',
     adNotAvailable: 'Hakuna tangazo kwa sasa. Jaribu tena baadaye kidogo.',
@@ -697,7 +725,7 @@ window.I18N = {
     totalBalance: 'Solde total', availableToWithdraw: 'Disponible au retrait',
     watchAds: 'Voir des pubs', completeTasks: 'Tâches', inviteFriends: 'Inviter des amis',
     watchAdsEarn: 'Regardez des pubs & gagnez', watchAdsSub: 'Regardez une courte vidéo publicitaire et gagnez',
-    watchAd: 'Voir la pub', watchAdSub: 'Terminez la vidéo pour gagner', today: "aujourd'hui",
+    watchAd: 'Voir la pub', watchAdSub: 'Terminez la vidéo pour gagner', bonusAd: 'Pub bonus', bonusAdSub: 'Ouvrez la page du sponsor puis revenez pour gagner', limitShort: 'Limite atteinte', today: "aujourd'hui",
     readyToEarn: 'Prêt à gagner', loadingAd: 'Chargement de la pub…', verifying: 'Vérification…',
     waitSeconds: 'Prochaine pub dans {s}s', dailyLimit: 'Limite quotidienne atteinte. Revenez demain !',
     adNotAvailable: 'Aucune pub disponible. Réessayez dans un instant.',
@@ -837,9 +865,12 @@ window.I18N = {
 
     // ads
     $('#adRewardText').textContent = money(ads.reward);
-    $('#adRewardBadge').textContent = `+${money(ads.reward)}`;
-    $('#adCount').textContent = `${ads.today} / ${ads.dailyLimit}`;
-    $('#adProgress').style.width = `${Math.min(100, (ads.today / ads.dailyLimit) * 100)}%`;
+    for (const [fmt, f] of Object.entries(adFormats())) {
+      const card = $(`.watch-card[data-format="${fmt}"]`);
+      if (!card) continue;
+      card.querySelector('.js-badge').textContent = `+${money(f.reward)}`;
+      card.querySelector('.js-fill').style.width = `${Math.min(100, (f.today / f.dailyLimit) * 100)}%`;
+    }
     $('#adsWatched').textContent = ads.watchedTotal;
     $('#adsEarned').textContent = money(ads.earnedTotal);
     if (!adBusy) updateAdStatus();
@@ -864,24 +895,36 @@ window.I18N = {
     el.querySelector('span').textContent = text;
   }
 
+  // Per-format state; older servers only send the interstitial fields at the top level.
+  const adFormats = () => S.ads.formats || { interstitial: S.ads };
+
+  // Each card shows its own "x / y today" or countdown; the status line sums up.
   function updateAdStatus() {
-    const a = S.ads;
     clearInterval(cooldownTimer);
-    if (a.today >= a.dailyLimit) { $('#watchBtn').disabled = true; return setStatus(t('dailyLimit'), 'warn', 'i-clock'); }
-    if (a.cooldownLeft > 0) {
-      $('#watchBtn').disabled = true;
-      const until = Date.now() + a.cooldownLeft * 1000;
-      const tick = () => {
-        const left = Math.ceil((until - Date.now()) / 1000);
-        if (left <= 0) { clearInterval(cooldownTimer); a.cooldownLeft = 0; updateAdStatus(); return; }
-        setStatus(t('waitSeconds', { s: left }), '', 'i-clock');
-      };
-      tick();
-      cooldownTimer = setInterval(tick, 1000);
-      return;
-    }
-    $('#watchBtn').disabled = false;
-    setStatus(t('readyToEarn'));
+    const started = Date.now();
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - started) / 1000);
+      let anyReady = false, minWait = Infinity, allLimited = true;
+      for (const [fmt, f] of Object.entries(adFormats())) {
+        const card = $(`.watch-card[data-format="${fmt}"]`);
+        if (!card) continue;
+        const limited = f.today >= f.dailyLimit;
+        const wait = Math.max(0, f.cooldownLeft - elapsed);
+        if (!limited) allLimited = false;
+        if (!limited && wait === 0) anyReady = true;
+        if (!limited && wait > 0) minWait = Math.min(minWait, wait);
+        card.disabled = adBusy || limited || wait > 0;
+        card.querySelector('.js-count').textContent = limited ? t('limitShort')
+          : wait > 0 ? `⏱ ${wait}s` : `${f.today} / ${f.dailyLimit} ${t('today')}`;
+      }
+      if (adBusy) return;
+      if (allLimited) { clearInterval(cooldownTimer); setStatus(t('dailyLimit'), 'warn', 'i-clock'); }
+      else if (anyReady) setStatus(t('readyToEarn'));
+      else setStatus(t('waitSeconds', { s: minWait }), '', 'i-clock');
+      if (allLimited || minWait === Infinity) clearInterval(cooldownTimer);
+    };
+    tick();
+    cooldownTimer = setInterval(tick, 1000);
   }
 
   // ------------------------------------------------------------ Monetag
@@ -903,15 +946,17 @@ window.I18N = {
     return monetagReady;
   }
 
-  async function showAd(token) {
+  async function showAd(token, format) {
     const zone = S.config.monetagZoneId || (S.config.devMode ? '' : DEFAULT_ZONE);
     if (zone) {
       await loadMonetag(zone);
       const show = window[`show_${zone}`];
       if (typeof show !== 'function') throw new Error(t('adNotAvailable'));
-      // Rewarded interstitial: the promise resolves when the user has watched the ad.
-      // ymid lets Monetag send our session token back to the server in the postback.
-      await show({ ymid: token });
+      // Rewarded Interstitial: show_ZONE()  — resolves when the user has watched the ad.
+      // Rewarded Popup:        show_ZONE('pop') — resolves when the user returns from the sponsor page.
+      // ymid lets Monetag send our session token back to the server in the postback (interstitial only).
+      if (format === 'pop') await show('pop');   // exactly as in Monetag's instructions
+      else await show({ ymid: token });
       return;
     }
     if (!S.config.devMode) throw new Error(t('adNotAvailable'));
@@ -922,14 +967,16 @@ window.I18N = {
     box.classList.remove('open');
   }
 
-  $('#watchBtn').onclick = async () => {
+  $$('.watch-card[data-format]').forEach((card) => (card.onclick = () => watchAd(card.dataset.format)));
+
+  async function watchAd(format) {
     if (adBusy) return;
     adBusy = true;
-    $('#watchBtn').disabled = true;
+    $$('.watch-card[data-format]').forEach((c) => (c.disabled = true));
     setStatus(t('loadingAd'), '', 'i-clock');
     try {
-      const { token } = await api('/ads/start', {});
-      await showAd(token);
+      const { token } = await api('/ads/start', { format });
+      await showAd(token, format);
       setStatus(t('verifying'), '', 'i-clock');
       let result;
       for (let attempt = 0; attempt < 8; attempt++) {
@@ -946,12 +993,13 @@ window.I18N = {
     } catch (e) {
       haptic('error');
       adBusy = false;
-      setStatus(e.message || t('adNotAvailable'), 'error');
       try { S = await api('/me', {}); } catch {}
-      setTimeout(() => { if (!adBusy && S) updateAdStatus(); }, 3500);
       render();
+      clearInterval(cooldownTimer);
+      setStatus((e && e.message) || t('adNotAvailable'), 'error');
+      setTimeout(() => { if (!adBusy && S) updateAdStatus(); }, 3500);
     }
-  };
+  }
 
   // ------------------------------------------------------------ tasks
   const GROUPS = {

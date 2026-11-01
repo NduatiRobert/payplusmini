@@ -108,9 +108,12 @@
 
     // ads
     $('#adRewardText').textContent = money(ads.reward);
-    $('#adRewardBadge').textContent = `+${money(ads.reward)}`;
-    $('#adCount').textContent = `${ads.today} / ${ads.dailyLimit}`;
-    $('#adProgress').style.width = `${Math.min(100, (ads.today / ads.dailyLimit) * 100)}%`;
+    for (const [fmt, f] of Object.entries(adFormats())) {
+      const card = $(`.watch-card[data-format="${fmt}"]`);
+      if (!card) continue;
+      card.querySelector('.js-badge').textContent = `+${money(f.reward)}`;
+      card.querySelector('.js-fill').style.width = `${Math.min(100, (f.today / f.dailyLimit) * 100)}%`;
+    }
     $('#adsWatched').textContent = ads.watchedTotal;
     $('#adsEarned').textContent = money(ads.earnedTotal);
     if (!adBusy) updateAdStatus();
@@ -135,24 +138,36 @@
     el.querySelector('span').textContent = text;
   }
 
+  // Per-format state; older servers only send the interstitial fields at the top level.
+  const adFormats = () => S.ads.formats || { interstitial: S.ads };
+
+  // Each card shows its own "x / y today" or countdown; the status line sums up.
   function updateAdStatus() {
-    const a = S.ads;
     clearInterval(cooldownTimer);
-    if (a.today >= a.dailyLimit) { $('#watchBtn').disabled = true; return setStatus(t('dailyLimit'), 'warn', 'i-clock'); }
-    if (a.cooldownLeft > 0) {
-      $('#watchBtn').disabled = true;
-      const until = Date.now() + a.cooldownLeft * 1000;
-      const tick = () => {
-        const left = Math.ceil((until - Date.now()) / 1000);
-        if (left <= 0) { clearInterval(cooldownTimer); a.cooldownLeft = 0; updateAdStatus(); return; }
-        setStatus(t('waitSeconds', { s: left }), '', 'i-clock');
-      };
-      tick();
-      cooldownTimer = setInterval(tick, 1000);
-      return;
-    }
-    $('#watchBtn').disabled = false;
-    setStatus(t('readyToEarn'));
+    const started = Date.now();
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - started) / 1000);
+      let anyReady = false, minWait = Infinity, allLimited = true;
+      for (const [fmt, f] of Object.entries(adFormats())) {
+        const card = $(`.watch-card[data-format="${fmt}"]`);
+        if (!card) continue;
+        const limited = f.today >= f.dailyLimit;
+        const wait = Math.max(0, f.cooldownLeft - elapsed);
+        if (!limited) allLimited = false;
+        if (!limited && wait === 0) anyReady = true;
+        if (!limited && wait > 0) minWait = Math.min(minWait, wait);
+        card.disabled = adBusy || limited || wait > 0;
+        card.querySelector('.js-count').textContent = limited ? t('limitShort')
+          : wait > 0 ? `⏱ ${wait}s` : `${f.today} / ${f.dailyLimit} ${t('today')}`;
+      }
+      if (adBusy) return;
+      if (allLimited) { clearInterval(cooldownTimer); setStatus(t('dailyLimit'), 'warn', 'i-clock'); }
+      else if (anyReady) setStatus(t('readyToEarn'));
+      else setStatus(t('waitSeconds', { s: minWait }), '', 'i-clock');
+      if (allLimited || minWait === Infinity) clearInterval(cooldownTimer);
+    };
+    tick();
+    cooldownTimer = setInterval(tick, 1000);
   }
 
   // ------------------------------------------------------------ Monetag
@@ -174,15 +189,17 @@
     return monetagReady;
   }
 
-  async function showAd(token) {
+  async function showAd(token, format) {
     const zone = S.config.monetagZoneId || (S.config.devMode ? '' : DEFAULT_ZONE);
     if (zone) {
       await loadMonetag(zone);
       const show = window[`show_${zone}`];
       if (typeof show !== 'function') throw new Error(t('adNotAvailable'));
-      // Rewarded interstitial: the promise resolves when the user has watched the ad.
-      // ymid lets Monetag send our session token back to the server in the postback.
-      await show({ ymid: token });
+      // Rewarded Interstitial: show_ZONE()  — resolves when the user has watched the ad.
+      // Rewarded Popup:        show_ZONE('pop') — resolves when the user returns from the sponsor page.
+      // ymid lets Monetag send our session token back to the server in the postback (interstitial only).
+      if (format === 'pop') await show('pop');   // exactly as in Monetag's instructions
+      else await show({ ymid: token });
       return;
     }
     if (!S.config.devMode) throw new Error(t('adNotAvailable'));
@@ -193,14 +210,16 @@
     box.classList.remove('open');
   }
 
-  $('#watchBtn').onclick = async () => {
+  $$('.watch-card[data-format]').forEach((card) => (card.onclick = () => watchAd(card.dataset.format)));
+
+  async function watchAd(format) {
     if (adBusy) return;
     adBusy = true;
-    $('#watchBtn').disabled = true;
+    $$('.watch-card[data-format]').forEach((c) => (c.disabled = true));
     setStatus(t('loadingAd'), '', 'i-clock');
     try {
-      const { token } = await api('/ads/start', {});
-      await showAd(token);
+      const { token } = await api('/ads/start', { format });
+      await showAd(token, format);
       setStatus(t('verifying'), '', 'i-clock');
       let result;
       for (let attempt = 0; attempt < 8; attempt++) {
@@ -217,12 +236,13 @@
     } catch (e) {
       haptic('error');
       adBusy = false;
-      setStatus(e.message || t('adNotAvailable'), 'error');
       try { S = await api('/me', {}); } catch {}
-      setTimeout(() => { if (!adBusy && S) updateAdStatus(); }, 3500);
       render();
+      clearInterval(cooldownTimer);
+      setStatus((e && e.message) || t('adNotAvailable'), 'error');
+      setTimeout(() => { if (!adBusy && S) updateAdStatus(); }, 3500);
     }
-  };
+  }
 
   // ------------------------------------------------------------ tasks
   const GROUPS = {

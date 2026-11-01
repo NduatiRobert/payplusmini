@@ -2,7 +2,8 @@
 (() => {
   const DAY = new Date().toISOString().slice(0, 10);
   const S = {
-    balance: 2.30, totalEarned: 2.90, adsWatched: 2, adsEarned: 0.60, adsToday: 0, lastAd: 0,
+    balance: 2.30, totalEarned: 2.90, adsWatched: 2, adsEarned: 0.60,
+    fmt: { interstitial: { today: 0, last: 0 }, pop: { today: 0, last: 0 } },
     invited: 3, inviteEarned: 2.25, sessions: {}, withdrawals: [],
     tasks: [
       ...['PayPlus News', 'PayPlus Community', 'Crypto Daily', 'Earn Tips KE'].map((n, i) => ({ id: i + 1, type: 'channel', title: `Join ${n}`, url: 'https://t.me/telegram', reward: 0.10, status: i < 3 ? 'done' : 'new' })),
@@ -10,7 +11,7 @@
       { id: 30, type: 'subscribe', title: 'Subscribe on YouTube', url: 'https://youtube.com', reward: 0.10, status: 'new' },
     ],
   };
-  const CFG = { reward: 0.30, limit: 15, cooldown: 5, minWd: 10 };
+  const CFG = { minWd: 10, formats: { interstitial: { reward: 0.30, limit: 15, cooldown: 5 }, pop: { reward: 0.20, limit: 10, cooldown: 5 } } };
   const started = {};
   const r2 = (n) => Math.round(n * 100) / 100;
   const err = (status, error) => ({ status, body: { error } });
@@ -19,9 +20,12 @@
   const state = () => ({
     user: { id: 1901986305, firstName: 'Yoel', username: 'yoel', photoUrl: null },
     balance: r2(S.balance), totalEarned: r2(S.totalEarned),
-    ads: { reward: CFG.reward, dailyLimit: CFG.limit, today: S.adsToday,
-      cooldownLeft: Math.max(0, Math.ceil((S.lastAd + CFG.cooldown * 1000 - Date.now()) / 1000)),
-      watchedTotal: S.adsWatched, earnedTotal: r2(S.adsEarned) },
+    ads: (() => {
+      const formats = Object.fromEntries(Object.entries(CFG.formats).map(([k, f]) => [k, {
+        reward: f.reward, dailyLimit: f.limit, today: S.fmt[k].today,
+        cooldownLeft: Math.max(0, Math.ceil((S.fmt[k].last + f.cooldown * 1000 - Date.now()) / 1000)) }]));
+      return { ...formats.interstitial, formats, watchedTotal: S.adsWatched, earnedTotal: r2(S.adsEarned) };
+    })(),
     invite: { link: 'https://t.me/Pay_Plus_Bot/app?startapp=1901986305', reward: 0.75, requiredAds: 3, invited: S.invited, earned: S.inviteEarned },
     config: { monetagZoneId: '', supportUsername: '', botUsername: 'Pay_Plus_Bot', minWithdrawal: CFG.minWd, devMode: true },
   });
@@ -35,19 +39,23 @@
   function route(method, path, body) {
     if (path === '/me') return ok(state());
     if (path === '/ads/start') {
-      const s = state().ads;
-      if (s.today >= CFG.limit) return err(429, 'Daily ad limit reached. Come back tomorrow!');
+      const fmt = body.format || 'interstitial';
+      const s = state().ads.formats[fmt];
+      if (!s) return err(400, 'Unknown ad format.');
+      if (s.today >= s.dailyLimit) return err(429, 'Daily limit for this ad reached. Come back tomorrow!');
       if (s.cooldownLeft > 0) return err(429, `Please wait ${s.cooldownLeft}s before the next ad.`);
       const token = Math.random().toString(36).slice(2);
-      S.sessions[token] = Date.now();
+      S.sessions[token] = fmt;
       return ok({ token });
     }
     if (path === '/ads/complete') {
-      if (!S.sessions[body.token]) return err(409, 'This ad was already rewarded.');
+      const fmt = S.sessions[body.token];
+      if (!fmt) return err(409, 'This ad was already rewarded.');
       delete S.sessions[body.token];
-      S.balance += CFG.reward; S.totalEarned += CFG.reward; S.adsEarned += CFG.reward;
-      S.adsWatched++; S.adsToday++; S.lastAd = Date.now();
-      return ok({ ok: true, reward: CFG.reward, ...state() });
+      const reward = CFG.formats[fmt].reward;
+      S.balance += reward; S.totalEarned += reward; S.adsEarned += reward;
+      S.adsWatched++; S.fmt[fmt].today++; S.fmt[fmt].last = Date.now();
+      return ok({ ok: true, reward, ...state() });
     }
     if (path === '/tasks') return ok({ tasks: S.tasks.map((t) => ({ ...t })), minSeconds: 3 });
     let m = path.match(/^\/tasks\/(\d+)\/(start|claim)$/);

@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS withdrawals (
 CREATE INDEX IF NOT EXISTS idx_wd_status ON withdrawals(status);
 `);
 
+// Migration: ad format column (added with the Rewarded Popup format)
+if (!db.prepare("SELECT 1 FROM pragma_table_info('ad_sessions') WHERE name='format'").get()) {
+  db.exec("ALTER TABLE ad_sessions ADD COLUMN format TEXT NOT NULL DEFAULT 'interstitial'");
+}
+
 // Seed example tasks on first run so the Tasks screen isn't empty. Edit/delete them in /admin.
 if (db.prepare('SELECT COUNT(*) c FROM tasks').get().c === 0) {
   const ins = db.prepare('INSERT INTO tasks (type,title,url,chat_id,reward,sort,created_at) VALUES (?,?,?,?,?,?,?)');
