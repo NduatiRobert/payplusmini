@@ -41,7 +41,9 @@ function auth(req, res, next) {
   let user = q.getUser.get(u.id);
   if (!user) {
     q.insertUser.run(row);
-    console.log(`[user] new user ${u.id} (${row.first_name}) · startapp=${verified.startParam || '-'} · bot /start=${takePendingReferral(u.id) || '-'} · ?ref=${req.get('x-ref') || '-'}`);
+    const signup = `startapp=${verified.startParam || '-'} · bot /start=${takePendingReferral(u.id) || '-'} · ?ref=${req.get('x-ref') || '-'}`;
+    db.prepare('UPDATE users SET signup_ref=? WHERE id=?').run(signup, u.id);
+    console.log(`[user] new user ${u.id} (${row.first_name}) · ${signup}`);
   } else q.touchUser.run(row);
   // Referral sources, most trusted first: signed start_param, the bot's /start record, the ?ref= from the bot's button.
   // Applied in POST /api/me (once per app open), not on every request.
@@ -344,6 +346,19 @@ admin.post('/users/:id', (req, res) => {
   if (req.body.banned !== undefined) db.prepare('UPDATE users SET banned=? WHERE id=?').run(req.body.banned ? 1 : 0, u.id);
   const adj = Number(req.body.adjust);
   if (adj) addBalance(u.id, toMicro(adj), 'admin', req.body.note || null);
+  if (req.body.referrer_id !== undefined) {
+    // Manual fix by the admin: no 48h / ads checks, but no self-referral, unknown inviter or loops.
+    const refId = Number(req.body.referrer_id);
+    const inviter = q.getUser.get(refId);
+    if (!inviter) throw new HttpError(400, `No PayPlus user with ID ${req.body.referrer_id}.`);
+    if (refId === u.id) throw new HttpError(400, 'A user cannot refer themselves.');
+    if (inviter.referrer_id === u.id) throw new HttpError(400, 'That would create a loop (the inviter was referred by this user).');
+    if (u.referrer_id && u.referral_paid) throw new HttpError(400, `Already referred by ${u.referrer_id} and paid; can't change.`);
+    db.transaction(() => {
+      db.prepare("UPDATE users SET referrer_id=?, ref_note='set by admin' WHERE id=?").run(refId, u.id);
+      payReferrer(q.getUser.get(u.id)); // pays now if they already watched enough ads
+    })();
+  }
   res.json({ ok: true });
 });
 

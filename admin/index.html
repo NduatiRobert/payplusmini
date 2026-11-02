@@ -33,6 +33,7 @@
   .banner { padding: 12px 14px; border-radius: 12px; margin-bottom: 14px; background: #fff; border: 1px solid #ece3c8; font-size: 14px; line-height: 1.5; }
   .banner.bad { background: #fde2e2; border-color: #e8a3a3; color: #7a1d1d; }
   .banner.good { background: #e3f6ea; border-color: #a6dcb8; }
+  .small-note { font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 11px; max-width: 260px; }
   .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
 </style>
 </head>
@@ -195,12 +196,14 @@ async function loadUsers() {
   if (!rows.length) { $('#userBody').innerHTML = `<tr><td colspan="9" class="muted">No users match "${esc(q)}". <a href="#" onclick="document.getElementById('userClear').click();return false">Show all users</a></td></tr>`; return; }
   $('#userBody').innerHTML = rows.map((u) => `<tr>
     <td class="mono">${u.id}</td><td>${esc(u.first_name)} ${esc(u.last_name || '')} ${u.username ? '<div class="muted">@' + esc(u.username) + '</div>' : ''}${u.banned ? ' <b style="color:#b03a3a">BANNED</b>' : ''}</td>
-    <td>${money(u.balance)}</td><td>${money(u.total_earned)}</td><td>${u.ads_watched}</td><td>${u.invited}${u.invited ? `<div class="muted">earned ${money(u.invite_earned)}</div>` : ''}</td><td class="mono">${u.referrer_id || '—'}${u.referrer_id ? `<div class="muted">${u.referral_paid ? 'paid' : 'not paid yet'}</div>` : ''}</td><td>${date(u.created_at)}</td>
-    <td><button class="small" data-adj="${u.id}">Adjust</button> <button class="small ${u.banned ? 'ok' : 'bad'}" data-ban="${u.id}" data-v="${u.banned ? 0 : 1}">${u.banned ? 'Unban' : 'Ban'}</button></td>
+    <td>${money(u.balance)}</td><td>${money(u.total_earned)}</td><td>${u.ads_watched}</td><td>${u.invited}${u.invited ? `<div class="muted">earned ${money(u.invite_earned)}</div>` : ''}</td><td class="mono">${u.referrer_id || '—'}${u.referrer_id ? `<div class="muted">${u.referral_paid ? 'paid' : 'not paid yet'}</div>` : ''}
+      <div class="muted small-note">${esc(u.ref_note || '')}</div><div class="muted small-note">joined via: ${esc(u.signup_ref || 'unknown (joined before this was recorded)')}</div></td><td>${date(u.created_at)}</td>
+    <td><button class="small" data-adj="${u.id}">Adjust</button> ${u.referral_paid ? '' : `<button class="small" data-ref="${u.id}">Set referrer</button>`} <button class="small ${u.banned ? 'ok' : 'bad'}" data-ban="${u.id}" data-v="${u.banned ? 0 : 1}">${u.banned ? 'Unban' : 'Ban'}</button></td>
   </tr>`).join('');
 }
 $('#userBody').onclick = async (e) => {
-  const a = e.target.closest('[data-adj]'), b = e.target.closest('[data-ban]');
+  const a = e.target.closest('[data-adj]'), b = e.target.closest('[data-ban]'), r = e.target.closest('[data-ref]');
+  if (r) { const v = prompt('Telegram ID of the user who invited this person:'); if (!v) return; await api('/users/' + r.dataset.ref, 'POST', { referrer_id: v.trim() }); loadUsers(); }
   if (a) { const v = prompt('Amount to add (negative to subtract), USD:'); if (!v) return; await api('/users/' + a.dataset.adj, 'POST', { adjust: Number(v), note: 'manual' }); loadUsers(); }
   if (b && confirm(b.dataset.v === '1' ? 'Ban this user?' : 'Unban this user?')) { await api('/users/' + b.dataset.ban, 'POST', { banned: b.dataset.v === '1' }); loadUsers(); }
 };

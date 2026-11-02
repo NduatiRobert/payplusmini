@@ -131,7 +131,11 @@ if (tasksSql.includes('CHECK (type IN')) {
 const REFERRAL_WINDOW_MS = 48 * 3600 * 1000;
 function attachReferrer(userId, raw, source = '') {
   const refId = Number(String(raw ?? '').trim().replace(/^ref_?/i, ''));
-  const why = (reason) => { console.log(`[ref] user ${userId} <- ${raw} via ${source || '?'}: NOT linked (${reason})`); return false; };
+  const why = (reason) => {
+    console.log(`[ref] user ${userId} <- ${raw} via ${source || '?'}: NOT linked (${reason})`);
+    db.prepare('UPDATE users SET ref_note=? WHERE id=? AND referrer_id IS NULL').run(`not linked to ${raw}: ${reason}`, userId);
+    return false;
+  };
   if (!Number.isSafeInteger(refId) || refId <= 0) return why('not a user id');
   if (refId === userId) return why('own link');
   const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
@@ -143,7 +147,10 @@ function attachReferrer(userId, raw, source = '') {
   if (Date.now() - user.created_at > REFERRAL_WINDOW_MS) return why('account older than 48h');
   if (inviter.referrer_id === userId) return why('loop: inviter was referred by this user');
   const ok = db.prepare('UPDATE users SET referrer_id=? WHERE id=? AND referrer_id IS NULL').run(refId, userId).changes > 0;
-  if (ok) console.log(`[ref] user ${userId} referred by ${refId} via ${source || '?'}`);
+  if (ok) {
+    console.log(`[ref] user ${userId} referred by ${refId} via ${source || '?'}`);
+    db.prepare('UPDATE users SET ref_note=? WHERE id=?').run(`linked via ${source || '?'}`, userId);
+  }
   return ok;
 }
 
@@ -160,6 +167,11 @@ function savePendingReferral(userId, raw) {
 function takePendingReferral(userId) {
   const row = db.prepare('SELECT referrer_id FROM pending_referrals WHERE user_id=?').get(userId);
   return row ? row.referrer_id : null;
+}
+
+// Migration: remember what referral info arrived at signup, and the latest referral decision (shown in admin).
+for (const col of ['signup_ref', 'ref_note']) {
+  if (!db.prepare("SELECT 1 FROM pragma_table_info('users') WHERE name=?").get(col)) db.exec(`ALTER TABLE users ADD COLUMN ${col} TEXT`);
 }
 
 db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('created_at', ?)").run(String(Date.now()));
